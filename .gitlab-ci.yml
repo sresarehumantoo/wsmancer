@@ -1,0 +1,84 @@
+# CI for wsmancer, validation only (no deploy/publish).
+#
+# Mirrors the Makefile gates: `make check` (gofmt + go vet + the unit tests),
+# `make mutants` and `make build`. Nothing here talks to a WinRM target, so what
+# CI proves is a strict subset of what this project considers verified: the
+# auth/sealing matrix, the shell's terminal behavior and every post-ex command
+# are proven by the scripts/ harnesses against a real box, and those are
+# deliberately not run here (they need a live Windows listener and lab
+# credentials). The exceptions are the two mutation gates, which need no target
+# at all, see the mutants job. A green pipeline means "it compiles, it is
+# formatted, the offline logic holds, and the sealing packages' tests still catch
+# broken sealing", see docs/verification.md for the rest.
+#
+# .github/workflows/ci.yml is the GitHub mirror of this file; the two run the
+# same commands and should be changed together.
+
+stages:
+  - lint
+  - test
+
+variables:
+  GOTOOLCHAIN: local          # build with the image's Go, never download another
+  GOFLAGS: -mod=mod
+
+default:
+  tags:
+    - docker
+  image: golang:1.25
+
+lint:
+  stage: lint
+  script:
+    - test -z "$(gofmt -l cmd internal)" || { echo "gofmt needed:"; gofmt -l cmd internal; exit 1; }
+    - go vet ./cmd/... ./internal/...
+
+test:
+  stage: test
+  script:
+    - go test ./internal/...
+    # The vendored fork is a separate module and its own go.mod carries a replace
+    # to ../go-psrpcore, a directory that does not exist here, so `go test ./...`
+    # inside it fails on the client package for reasons that have nothing to do
+    # with our patches. Test the packages the fork patches actually touch.
+    - cd go-psrp-fork && go test ./wsman/...
+
+# The mutation differentials for the two sealing packages: break the production
+# code one way at a time and fail unless the unit tests catch every one. They are
+# what keep each package's two test styles honest, the structural tests
+# recompute with the production code's own primitives and so cannot see a
+# self-consistent wrong algorithm, while the vectors compare against independent
+# ground truth. Sealing crypto is the one part of this tool a silent regression
+# would not surface as a visible failure, so the gate is automatic rather than
+# something someone remembers to run.
+#
+#   ntlmseal  twenty mutants; five caught only by vectors_test.go's MS-NLMP
+#             published values. Dry-run in golang:1.25: 20/20 caught in 34s.
+#   krbseal   fourteen mutants; TEN caught only by vectors_test.go, which is
+#             impacket's output rather than a published vector, the RFCs
+#             publish none for these tokens. That ratio is why this second gate
+#             exists: krbseal hand-rolls RFC 4757's HMAC-MD5 chains, and before
+#             the vectors landed its whole test suite was blind to every one of
+#             them. Local run: 14/14 caught in 8s.
+#
+# Neither needs a target or credentials, only perl and the toolchain already in
+# this image. The krbseal *generator* (scripts/krbseal-vectors.py) needs
+# impacket, but it is deliberately not run here, the frozen bytes are the
+# artifact.
+mutants:
+  stage: test
+  script:
+    - ./scripts/ntlmseal-mutants.sh
+    - ./scripts/krbseal-mutants.sh
+
+build:
+  stage: test
+  script:
+    - go build -o wsmancer ./cmd/wsmancer
+    # sealcheck drives the sealing providers (verify-matrix.sh runs it) and
+    # scripts/verify-matrix.sh still drives it, so it has to keep building.
+    - go build -o wsmancer-sealcheck ./cmd/sealcheck
+  artifacts:
+    paths:
+      - wsmancer
+    expire_in: 1 week

@@ -1,0 +1,21 @@
+# Template. scripts/get-tickets.sh renders this into lab/krb5.conf with the
+# realm and KDC of the box you are actually testing against; verify-matrix.sh
+# reads the rendered copy. Nothing here is edited by hand, and no lab's realm is
+# ever committed.
+#
+# Three placeholders, spelled with at-signs around each name (they are not
+# written out here, or rendering would substitute this comment too): REALM is
+# the realm upper-case, realm is the same lower-case, and KDC is the KDC as a
+# name or an address.
+[libdefaults]
+    default_realm = @REALM@
+    dns_lookup_kdc = false
+    dns_lookup_realm = false
+[realms]
+    @REALM@ = {
+        kdc = @KDC@
+        admin_server = @KDC@
+    }
+[domain_realm]
+    .@realm@ = @REALM@
+    @realm@ = @REALM@

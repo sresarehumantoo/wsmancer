@@ -1,0 +1,25 @@
+# Template for the AES-only config `kvno` is driven with. scripts/get-tickets.sh
+# renders it into lab/krb5-aes.conf. See krb5.conf.tmpl for the placeholders.
+#
+# The enctype lists are the point of this file: impacket's getST downgrades to
+# RC4 whatever you ask for, so the AES service ticket is obtained with MIT kvno
+# under a config that cannot express anything else. arcfour stays in
+# permitted_enctypes because the TGT this reuses may still be RC4-protected.
+#
+# MIT wants an address for the KDC here, not a name, and a lab box's address
+# changes every spawn, which is why this is rendered per run rather than edited.
+[libdefaults]
+    default_realm = @REALM@
+    dns_lookup_kdc = false
+    dns_lookup_realm = false
+    default_tkt_enctypes = aes256-cts-hmac-sha1-96
+    default_tgs_enctypes = aes256-cts-hmac-sha1-96
+    permitted_enctypes = aes256-cts-hmac-sha1-96 arcfour-hmac
+    udp_preference_limit = 1
+[realms]
+    @REALM@ = {
+        kdc = @KDC@
+    }
+[domain_realm]
+    .@realm@ = @REALM@
+    @realm@ = @REALM@

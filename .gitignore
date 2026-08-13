@@ -1,0 +1,27 @@
+# build output
+/wsmancer
+/wsmancer-sealcheck
+
+# engagement artifacts / secrets, never commit.
+# lab/ is where these belong now (see lab/README.md); the loose patterns stay so
+# an older script, or a stray run from the repo root, still cannot commit one.
+/lab/
+*.ccache
+admincc
+skew.txt
+# python bytecode from the harnesses in scripts/
+__pycache__/
+
+# debug traces (NTLMSEAL_DEBUG/PSRP_DEBUG), contain hostnames + decrypted faults
+*.log
+trace.log
+
+# Claude Code's per-machine state (settings.local.json is a permission log, and
+# it grows). Nothing here is shared config today; if a checked-in
+# .claude/settings.json is ever wanted, narrow this to settings.local.json.
+/.claude/
+
+# The agent-facing working notes. Deliberately not published: CONTRIBUTING.md is
+# the public form of the same index, and the two would drift. Untracked rather
+# than deleted, the file is still the working copy on this machine.
+/CLAUDE.md
