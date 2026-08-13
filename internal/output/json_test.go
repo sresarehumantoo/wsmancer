@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/smnsjas/go-psrp/client"
+	"github.com/sresarehumantoo/go-psrp/client"
 )
 
 // decode reads exactly one NDJSON object off the buffer into a generic map, and

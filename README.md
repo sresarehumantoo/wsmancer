@@ -71,10 +71,13 @@ this owes to that project, are in [Credits](#credits-and-license).
 
 ## Install
 
-Requires Go 1.25+. Build from source: there is no `go install` path, because
-the module carries a `replace` for its vendored go-psrp fork (see
-[Credits](#credits-and-license)) and `go install pkg@version` refuses any module
-that does.
+Requires Go 1.25+.
+
+```sh
+go install github.com/sresarehumantoo/wsmancer/cmd/wsmancer@latest
+```
+
+or build from a clone:
 
 ```sh
 git clone https://github.com/sresarehumantoo/wsmancer
@@ -82,8 +85,9 @@ cd wsmancer
 go build -o wsmancer ./cmd/wsmancer
 ```
 
-The result is a single static binary with no runtime dependencies. `make check`
-runs what CI runs; [`CONTRIBUTING.md`](CONTRIBUTING.md) is the developer guide.
+Either way the result is a single static binary with no runtime dependencies.
+`make check` runs what CI runs; [`CONTRIBUTING.md`](CONTRIBUTING.md) is the
+developer guide.
 
 ## Quick start
 
@@ -655,9 +659,10 @@ wsmancer is therefore **LGPL-3.0** as well, see `LICENSE`. The
 
 PSRP itself comes from [smnsjas/go-psrp](https://github.com/smnsjas/go-psrp)
 (MIT, © Jason Simons), which builds on
-[smnsjas/go-psrpcore](https://github.com/smnsjas/go-psrpcore). A patched copy is
-vendored at `go-psrp-fork/` under its own `LICENSE`, carrying the changes this
-tool needs and upstream lacks, a pluggable authenticator so the NTLM/Kerberos
-sealing layer can be dropped in, pipeline termination for Ctrl-C, an adaptive
-Receive timeout, and WS-Addressing `RelatesTo` correlation. Every patch is
-marked `Fork patch` in the source and explained in `docs/architecture.md`.
+[smnsjas/go-psrpcore](https://github.com/smnsjas/go-psrpcore). wsmancer depends on
+[sresarehumantoo/go-psrp](https://github.com/sresarehumantoo/go-psrp), a fork of
+it (still MIT) carrying the transport changes this tool needs and upstream lacks:
+a pluggable authenticator so the NTLM/Kerberos sealing layer can be dropped in,
+pipeline termination for Ctrl-C, an adaptive Receive timeout, and WS-Addressing
+`RelatesTo` correlation. Each patch is marked `Fork patch` in that repo's source
+and the reasoning is in `docs/architecture.md`.

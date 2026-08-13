@@ -22,7 +22,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/smnsjas/go-psrp/client"
+	"github.com/sresarehumantoo/go-psrp/client"
 
 	"github.com/sresarehumantoo/wsmancer/internal/cli"
 	"github.com/sresarehumantoo/wsmancer/internal/complete"

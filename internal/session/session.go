@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/smnsjas/go-psrp/client"
+	"github.com/sresarehumantoo/go-psrp/client"
 
 	"github.com/sresarehumantoo/wsmancer/internal/auth/certauth"
 	"github.com/sresarehumantoo/wsmancer/internal/auth/krbseal"

@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/smnsjas/go-psrp/client"
+	"github.com/sresarehumantoo/go-psrp/client"
 
 	"github.com/sresarehumantoo/wsmancer/internal/output"
 )

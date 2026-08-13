@@ -271,8 +271,10 @@ invisible otherwise.
 
 ## The go-psrp fork
 
-`go.mod` has `replace github.com/smnsjas/go-psrp => ./go-psrp-fork`. The vendored
-fork carries patches upstream lacks; grep `Fork patch` to find them:
+PSRP transport is [`sresarehumantoo/go-psrp`](https://github.com/sresarehumantoo/go-psrp),
+a fork of upstream `smnsjas/go-psrp`, pulled in as an ordinary `go.mod`
+dependency (no `replace`). It carries the patches upstream lacks, marked
+`Fork patch` in that repo:
 
 - `client.Config.CustomAuthenticator`, lets `ntlmseal`/`krbseal` drop in as the
   `auth.Authenticator`, so the sealing layer is used verbatim.

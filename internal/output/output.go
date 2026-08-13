@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/smnsjas/go-psrp/client"
 	"github.com/smnsjas/go-psrpcore/serialization"
+	"github.com/sresarehumantoo/go-psrp/client"
 )
 
 // ANSI colors, suppressed when --no-colors is set or the environment asks for

@@ -31,17 +31,12 @@ lint:
   stage: lint
   script:
     - test -z "$(gofmt -l cmd internal)" || { echo "gofmt needed:"; gofmt -l cmd internal; exit 1; }
-    - go vet ./cmd/... ./internal/...
+    - go vet ./...
 
 test:
   stage: test
   script:
-    - go test ./internal/...
-    # The vendored fork is a separate module and its own go.mod carries a replace
-    # to ../go-psrpcore, a directory that does not exist here, so `go test ./...`
-    # inside it fails on the client package for reasons that have nothing to do
-    # with our patches. Test the packages the fork patches actually touch.
-    - cd go-psrp-fork && go test ./wsman/...
+    - go test ./...
 
 # The mutation differentials for the two sealing packages: break the production
 # code one way at a time and fail unless the unit tests catch every one. They are

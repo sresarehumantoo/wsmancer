@@ -21,17 +21,10 @@ sealcheck:
 	go build -o wsmancer-sealcheck ./cmd/sealcheck
 
 test:
-	go test ./internal/...
-	# The fork's wsman package carries patches with their own tests (the
-	# RelatesTo correlation check, the SOAP-fault summariser). CI runs these;
-	# `make check` has to as well or a local pass means less than a CI pass.
-	# It is a separate module whose go.mod replaces ../go-psrpcore with a
-	# directory that does not exist here, so only the patched packages are
-	# testable, same reasoning as the CI job.
-	cd go-psrp-fork && go test ./wsman/...
+	go test ./...
 
 vet:
-	go vet ./cmd/... ./internal/...
+	go vet ./...
 
 fmt:
 	gofmt -w cmd internal

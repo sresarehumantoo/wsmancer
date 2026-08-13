@@ -139,9 +139,12 @@ the load-bearing details for every package below.
 
 ## The go-psrp fork
 
-`go.mod` has `replace github.com/smnsjas/go-psrp => ./go-psrp-fork`. The vendored
-fork carries patches upstream lacks; grep `Fork patch` to find them, and see
-`docs/architecture.md` for why each one is shaped the way it is:
+PSRP transport comes from [`github.com/sresarehumantoo/go-psrp`](https://github.com/sresarehumantoo/go-psrp),
+a fork of upstream [`smnsjas/go-psrp`](https://github.com/smnsjas/go-psrp) (MIT).
+It is an ordinary versioned dependency in `go.mod` (no `replace`), so nothing
+about it is special to build. The fork carries the patches upstream lacks,
+marked `Fork patch` in *its* source and listed in its README; `docs/architecture.md`
+explains why each is shaped the way it is:
 
 - `client.Config.CustomAuthenticator`, lets `ntlmseal`/`krbseal` drop in as the
   `auth.Authenticator`, so the sealing layer is used verbatim.
@@ -178,14 +181,10 @@ make mutants                         # the ntlmseal + krbseal mutation gates (no
 ./wsmancer -i dc01.corp.local -u svc-account -r corp.local -p "$PASS"
 ```
 
-**Prefer `make check` to a bare `go test ./...`.** The fork is a *separate
-module*, so `./...` from the root silently skips it, including the `wsman`
-tests covering `checkRelatesTo` and the SOAP-fault summariser. `make test` runs
-`./internal/...` and then `cd go-psrp-fork && go test ./wsman/...`, which is what
-CI does; running only the former means a local pass proves less than a CI pass.
-Never `go test ./...` *inside* the fork either: its go.mod replaces
-`../go-psrpcore` with a directory that does not exist here, so only the patched
-packages are testable.
+`make check` is `gofmt` + `go vet ./...` + `go test ./...` + the mutation gates.
+There is one module now (the fork is an external dependency), so `go test ./...`
+from the root is complete; the fork's own tests live in its repo. `make check`
+is still the thing to run because it also gofmt-checks and runs `make mutants`.
 
 The `wsmancer` binary is gitignored.
 

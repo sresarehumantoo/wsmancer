@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/smnsjas/go-psrp/client"
+	"github.com/sresarehumantoo/go-psrp/client"
 )
 
 // shellNotFoundSummary is the VERBATIM line the fork's soapFaultSummary produces
 // for WinRM's shell-not-found fault, which is the form that actually reaches the
 // shell, the raw envelope never does. Taken from the summarizer's own output
-// for the fixture in go-psrp-fork/wsman/transport/soapfault_test.go, rather than
-// hand-written, so a change to the summary format breaks this test instead of
+// for the fixture in the go-psrp fork's wsman/transport/soapfault_test.go, rather
+// than hand-written, so a change to the summary format breaks this test instead of
 // silently disarming the classifier.
 const shellNotFoundSummary = `wsman fault: s:Sender: w:InvalidSelectors: The request for the ` +
 	`Windows Remote Shell with ShellId 4F8A2C11-0000-0000-0000-000000000001 failed because the ` +

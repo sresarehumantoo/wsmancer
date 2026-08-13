@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/smnsjas/go-psrp/client"
+	"github.com/sresarehumantoo/go-psrp/client"
 
 	"github.com/sresarehumantoo/wsmancer/internal/auth/krbseal"
 	"github.com/sresarehumantoo/wsmancer/internal/auth/ntlmseal"

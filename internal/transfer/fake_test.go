@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/smnsjas/go-psrp/client"
+	"github.com/sresarehumantoo/go-psrp/client"
 )
 
 // fakeTarget is an in-process stand-in for a WinRM target. It implements the
