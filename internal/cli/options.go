@@ -18,7 +18,10 @@ import (
 	"github.com/sresarehumantoo/wsmancer/internal/proxydial"
 )
 
-const Version = "0.1.0"
+// Version is the build version. It defaults to the release it was cut for and
+// is overridden at release time via -ldflags (see .goreleaser.yml), so GoReleaser
+// binaries always carry the exact tag while `go install` reports this default.
+var Version = "0.1.0"
 
 type Options struct {
 	// connection
@@ -344,7 +347,7 @@ func FormatFingerprint(b []byte) string {
 	return string(buf)
 }
 
-const usage = `wsmancer ` + Version + `, WinRM shell for pentesting
+var usage = `wsmancer ` + Version + `, WinRM shell for pentesting
 
 Usage: wsmancer -i <target> [-u <user>] [-p <pass> | -H <nthash> | -K <ticket>] [options]
 

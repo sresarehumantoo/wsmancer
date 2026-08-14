@@ -25,3 +25,6 @@ trace.log
 # the public form of the same index, and the two would drift. Untracked rather
 # than deleted, the file is still the working copy on this machine.
 /CLAUDE.md
+
+# GoReleaser build output
+/dist/

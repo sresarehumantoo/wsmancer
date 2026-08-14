@@ -1,0 +1,32 @@
+# Release: on a vX.Y.Z tag, cross-compile the release binaries and attach them
+# (archives + SHA256SUMS + SBOMs) to the GitHub Release. Driven by .goreleaser.yml.
+# The `ci` workflow still runs the gates on every push; this is separate and
+# fires only on tags.
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write # create/update the Release and upload assets
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history + tags, so GoReleaser can build the changelog
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - name: install syft (for SBOMs)
+        uses: anchore/sbom-action/download-syft@v0
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,62 @@
+# GoReleaser config: build the release binaries when a vX.Y.Z tag is pushed.
+# .github/workflows/release.yml runs this on tag push; `goreleaser check` and
+# `goreleaser build --snapshot` validate it without publishing. Docs: https://goreleaser.com
+version: 2
+
+project_name: wsmancer
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: wsmancer
+    main: ./cmd/wsmancer
+    binary: wsmancer
+    env:
+      - CGO_ENABLED=0 # pure Go; keeps the binary static and cross-compilable
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64 # the 5 common targets; drop win/arm64
+    ldflags:
+      - -s -w
+      # stamp the exact tag so a release binary's `--version` matches the release
+      - -X github.com/sresarehumantoo/wsmancer/internal/cli.Version={{ .Version }}
+    mod_timestamp: "{{ .CommitTimestamp }}" # reproducible builds
+
+archives:
+  - id: wsmancer
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: SHA256SUMS
+  algorithm: sha256
+
+sboms:
+  - artifacts: archive # one CycloneDX SBOM per archive (syft)
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+      - "Merge "
+
+release:
+  github:
+    owner: sresarehumantoo
+    name: wsmancer
+  draft: false
+  prerelease: auto # a tag like v0.2.0-rc1 is marked pre-release automatically
