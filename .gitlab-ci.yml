@@ -25,7 +25,7 @@ variables:
 default:
   tags:
     - docker
-  image: golang:1.25
+  image: golang:1.26
 
 lint:
   stage: lint

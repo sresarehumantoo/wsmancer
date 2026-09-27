@@ -5,7 +5,7 @@
 **A PSRP-native WinRM shell for offensive Windows work: typed JSON output, message sealing against locked-down listeners, and a session that survives dropped connections.**
 
 [![CI](https://github.com/sresarehumantoo/wsmancer/actions/workflows/ci.yml/badge.svg)](https://github.com/sresarehumantoo/wsmancer/actions/workflows/ci.yml)
-[![Go 1.25+](https://img.shields.io/badge/go-1.25%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/dl/)
+[![Go 1.26+](https://img.shields.io/badge/go-1.26%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/dl/)
 [![License: LGPL-3.0](https://img.shields.io/badge/license-LGPL--3.0-blue.svg)](LICENSE)
 [![Single static binary](https://img.shields.io/badge/build-single%20static%20binary-informational)](#install)
 
@@ -71,7 +71,7 @@ this owes to that project, are in [Credits](#credits-and-license).
 
 ## Install
 
-Requires Go 1.25+.
+Requires Go 1.26+.
 
 ```sh
 go install github.com/sresarehumantoo/wsmancer/cmd/wsmancer@latest
