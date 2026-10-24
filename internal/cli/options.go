@@ -21,7 +21,7 @@ import (
 // Version is the build version. It defaults to the release it was cut for and
 // is overridden at release time via -ldflags (see .goreleaser.yml), so GoReleaser
 // binaries always carry the exact tag while `go install` reports this default.
-var Version = "0.1.1"
+var Version = "0.1.2"
 
 type Options struct {
 	// connection
