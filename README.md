@@ -43,8 +43,9 @@ binary, no runtime dependencies.
   result. Every built-in works in all three modes; they share one dispatch path.
 - 🧰 **The full post-ex set.** Script loading (`-s` + `menu`), `services` recon,
   in-memory .NET execution (`invoke-binary`), shellcode injection
-  (`donut-loader`), and `bypass-4msi`: every command upstream evil-winrm v3.9
-  ships, each verified against a real target.
+  (`donut-loader`), `bypass-4msi` (AMSI + ETW + ScriptBlock logging) and
+  `bypass-clm` (Constrained Language Mode): every command upstream evil-winrm
+  v3.9 ships plus CLM bypass, each verified against a real target.
 - 🌐 **SOCKS5 pivoting, TLS, mutual TLS.** `--proxy` for a pivot (where
   proxychains silently can't work on a static binary), `-S` with proper
   certificate verification, and client certs.
@@ -65,7 +66,7 @@ this owes to that project, are in [Credits](#credits-and-license).
 - [Transport security: sealing and TLS](#transport-security-sealing-and-tls)
 - [Authentication](#authentication) · [Interactive shell](#interactive-shell)
 - [File transfer](#file-transfer) · [Structured output](#structured-output)
-- [Loading PowerShell scripts](#loading-powershell-scripts) · [`bypass-4msi`](#bypass-4msi)
+- [Loading PowerShell scripts](#loading-powershell-scripts) · [`bypass-4msi`](#bypass-4msi) · [`bypass-clm`](#bypass-clm)
 - [Session logging](#session-logging) · [Pivoting: `--proxy`](#pivoting---proxy)
 - [Status](#status) · [Credits and license](#credits-and-license)
 
@@ -366,13 +367,14 @@ the runspace went with the old one:
 Error: the target no longer has this shell (it was restarted or timed out).
    A new shell has been opened.
    Session state was LOST: working directory, variables, functions,
-   any -s scripts, and any bypass-4msi patch. Re-load what you need.
+   any -s scripts, and any bypass-4msi/bypass-clm patch. Re-load what you need.
 ```
 
 The warning is deliberately loud rather than a silent reconnect. `bypass-4msi`
-patches AMSI inside the process serving the shell, so a new shell is unpatched,
-carrying on as though it survived would send your next post-ex command straight
-into AMSI. The failed command is not re-run for you, for the same reason.
+and `bypass-clm` patch the process serving the shell, so a new shell is
+unpatched, carrying on as though it survived would send your next post-ex
+command straight into AMSI or CLM. The failed command is not re-run for you,
+for the same reason.
 
 **The line editor** is
 [reeflective/readline](https://github.com/reeflective/readline). The `peterh/liner`
@@ -412,7 +414,8 @@ unambiguous, while `[ ]` stay literal (a `[...]` class still works alongside
 `-o json` emits one object per command with every PowerShell stream (output,
 error, warning, verbose, …) as typed JSON instead of a formatted table, the
 reason wsmancer exists. `-x <cmd>` runs a single command and exits, which pairs
-well with JSON for scripting.
+well with JSON for scripting. `-q/--quiet` suppresses `Info:` lines on stderr
+while keeping errors, so `-o json -x` output is clean for a consumer.
 
 `-x` runs the line through the **same dispatch as the interactive shell**, so
 every built-in has a non-interactive form; there is no feature you can only
@@ -530,22 +533,49 @@ and `invoke-binary`, so a shellcode blob of any real size doesn't overrun
 
 ### `bypass-4msi`
 
-Patches `AmsiScanBuffer` in the current runspace so PowerShell stops submitting
-script content to AMSI. Upstream's payload is re-obfuscated on every invocation,
-that is load-bearing rather than cosmetic, since AMSI scans the very script that
-patches it, and it runs as ten separate commands so no single one carries the
-whole patch. Expect it to take ~20s.
+Does three things in the current runspace:
+
+1. **AMSI**: patches `AmsiScanBuffer` so PowerShell stops submitting script
+   content to AMSI.
+2. **ETW**: patches `EtwEventWrite` so the runtime stops emitting .NET ETW
+   events (assembly-load telemetry, script-block logs forwarded through ETW).
+3. **ScriptBlock logging**: disables `ScriptBlock` logging at the
+   `System.Management.Automation.ScriptBlock` level, so commands are not
+   written to the PowerShell Operational log.
+
+Upstream's payload is re-obfuscated on every invocation, that is load-bearing
+rather than cosmetic, since AMSI scans the very script that patches it, and it
+runs as ten separate commands so no single one carries the whole patch. Expect
+it to take ~20s.
 
 ```
 PS C:\> bypass-4msi
 Info: patching AMSI in 10 steps (~18s)...
-Info: AMSI patched in this runspace
+Info: AMSI and ETW patched, ScriptBlock logging disabled
 ```
 
 It is the noisiest thing here and nothing else depends on it, so do it last, and
 only when you need it. Every step of a working patch is silent, so any output at
 all is reported as a failure rather than glossed as success, a half-applied
 patch that claimed to work would be worse than none.
+
+### `bypass-clm`
+
+Patches `GetSystemLockdownPolicy` in the current process to return
+`FullLanguage`, bypassing PowerShell's Constrained Language Mode. Like
+`bypass-4msi`, the patch is PowerShell-based and delivered over PSRP (no binary
+upload needed), re-obfuscated on every invocation, and split into separate
+commands. Expect it to take ~10s.
+
+```
+PS C:\> bypass-clm
+Info: bypassing CLM in 5 steps (~8s)...
+Info: CLM bypassed (FullLanguage)
+```
+
+Run it when the target enforces CLM and you need to call .NET methods, define
+classes, or use language features CLM restricts. It is independent of
+`bypass-4msi`: either can be run alone, and the order does not matter.
 
 ## Session logging
 
@@ -591,9 +621,11 @@ each was verified against a real target rather than by trusting a success
 message: PowerShell script loading (`-s` + `menu`), `services` (privesc recon),
 in-memory .NET execution (`invoke-binary`, with `-e/--executables`; live-tested
 with Rubeus), shellcode injection into a remote x64 process (`donut-loader`;
-the payload executed in the target process, which survived), and `bypass-4msi`
-(the AMSI test sample is refused before the patch and runs after it, against a
-box with real-time monitoring actually enabled).
+the payload executed in the target process, which survived), `bypass-4msi`
+(AMSI patch, ETW patch, ScriptBlock logging disable; the AMSI test sample is
+refused before the patch and runs after it, against a box with real-time
+monitoring actually enabled), and `bypass-clm` (patches `GetSystemLockdownPolicy`
+to force `FullLanguage` mode, delivered as a PowerShell payload over PSRP).
 
 **Certificate authentication** is supported: `-S -c cert.pem -k key.pem` with no
 other credential authenticates by certificate alone, verified against a listener
@@ -636,6 +668,20 @@ Info: connecting to http://dc01.corp.local:5985/wsman via socks5 127.0.0.1:1080
 Everything else is unchanged: NTLM/Kerberos sealing, TLS on `-S` (verified
 against the *target's* name, not the proxy's), certificate auth, Ctrl-C and file
 transfer all behave the same proxied.
+
+## Environment variables
+
+| Variable | Purpose |
+|----------|---------|
+| `WSMANCER_PASSWORD` | password (same as `-p`) |
+| `WSMANCER_PROXY` | SOCKS5 proxy URL (same as `--proxy`) |
+| `WSMANCER_TIMEOUT` | connect timeout in seconds (same as `-T`) |
+| `WSMANCER_HISTORY_DIR` | override `~/.wsmancer/history` for `-Y` |
+| `WSMANCER_LOG_DIR` | override `~/.wsmancer/logs` for `-l` |
+| `WSMANCER_EDITOR` | set to `plain` to disable line editing |
+| `WSMANCER_DEBUG` | non-empty enables PSRP debug logging to stderr |
+| `WSMANCER_POLL_SECONDS` | Receive poll interval (default `1`); trades cancel latency against traffic |
+| `NO_COLOR` | disable colors (no-color.org convention; presence at any value) |
 
 ## Full flag reference
 
