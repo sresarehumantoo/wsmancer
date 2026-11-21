@@ -34,7 +34,7 @@ func TestObfuscationLeavesNoTelltaleLiterals(t *testing.T) {
 func TestObfuscationConsumesEveryPlaceholder(t *testing.T) {
 	for seed := int64(1); seed <= 20; seed++ {
 		got := obf(seed)
-		for _, frag := range []string{">><", "<><", "FUNCTION1", "FUNCTION2", "VAR1", "VAR12"} {
+		for _, frag := range []string{">><", "<><", "FUNCTION1", "FUNCTION2", "VAR1", "VAR12", "AMSI_STUB", "ETW_STUB"} {
 			if strings.Contains(got, frag) {
 				t.Errorf("seed %d: unconsumed %q remains", seed, frag)
 			}
@@ -117,9 +117,63 @@ func TestCharExpressionHandlesHighBytes(t *testing.T) {
 	}
 }
 
-// The payload's own bytes must survive verbatim: this is the stub written over
-// AmsiScanBuffer's prologue, and a corrupted one would be executed.
-func TestPatchBytesAreUnchanged(t *testing.T) {
+// byteExprRe matches the three forms oneByteExpression emits: subtraction,
+// XOR (-bxor), and addition.
+var byteExprRe = regexp.MustCompile(`\((\d+)\s*([+-])\s*(\d+)\)|\((\d+)\s+-bxor\s+(\d+)\)`)
+
+func evalByteExprs(t *testing.T, expr string) []byte {
+	t.Helper()
+	var result []byte
+	for _, m := range byteExprRe.FindAllStringSubmatch(expr, -1) {
+		var val int
+		if m[1] != "" {
+			a, _ := strconv.Atoi(m[1])
+			b, _ := strconv.Atoi(m[3])
+			switch m[2] {
+			case "+":
+				val = a + b
+			case "-":
+				val = a - b
+			}
+		} else {
+			a, _ := strconv.Atoi(m[4])
+			b, _ := strconv.Atoi(m[5])
+			val = a ^ b
+		}
+		result = append(result, byte(val))
+	}
+	return result
+}
+
+func TestByteExpressionRoundTrips(t *testing.T) {
+	r := rand.New(rand.NewSource(7))
+	for _, tc := range []struct {
+		name string
+		data []byte
+	}{
+		{"AMSI", amsiPatchBytes},
+		{"ETW", etwPatchBytes},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			for i := 0; i < 50; i++ {
+				expr := obfuscateByteArray(tc.data, r)
+				got := evalByteExprs(t, expr)
+				if len(got) != len(tc.data) {
+					t.Fatalf("round %d: got %d bytes, want %d from %q", i, len(got), len(tc.data), expr)
+				}
+				for j := range got {
+					if got[j] != tc.data[j] {
+						t.Fatalf("round %d: byte %d = 0x%02x, want 0x%02x", i, j, got[j], tc.data[j])
+					}
+				}
+			}
+		})
+	}
+}
+
+// The patch bytes must not appear as literal hex in the obfuscated script;
+// their values are now generated as arithmetic expressions.
+func TestPatchBytesNotLiteral(t *testing.T) {
 	for _, tc := range []struct {
 		name  string
 		patch string
@@ -128,11 +182,8 @@ func TestPatchBytesAreUnchanged(t *testing.T) {
 		{"ETW", "0x31,0xc0,0xc3"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			if !strings.Contains(bypass4MSITemplate, tc.patch) {
-				t.Fatalf("the template no longer carries %s patch bytes", tc.name)
-			}
-			if !strings.Contains(obf(5), tc.patch) {
-				t.Errorf("obfuscation altered the %s patch bytes", tc.name)
+			if strings.Contains(obf(5), tc.patch) {
+				t.Errorf("obfuscated script still contains literal %s patch bytes", tc.name)
 			}
 		})
 	}

