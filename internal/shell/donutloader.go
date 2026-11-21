@@ -69,7 +69,7 @@ func (sh *Shell) donutLoader(ctx context.Context, sigs <-chan os.Signal, line st
 	sh.log.Event("[donut-loader] %s (%d bytes) -> pid %s (%s)", file, len(data), pid, target)
 	// The loader prints nothing on success, so say what was done, otherwise a
 	// successful injection and a silent no-op look identical.
-	if !sh.json {
+	if !sh.json && !sh.quiet {
 		fmt.Fprintf(sh.out, "%s injecting %d bytes into pid %s (%s)\n",
 			sh.c.Blue("Info:"), len(data), pid, target)
 	}

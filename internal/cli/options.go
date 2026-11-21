@@ -67,6 +67,7 @@ type Options struct {
 	Timeout  int    // connect timeout in seconds; 0 means default (60)
 	NoColors bool
 	NoRPath  bool
+	Quiet    bool
 	Log      bool
 
 	// History opts into an on-disk, per-connection command history. Off by
@@ -177,6 +178,7 @@ func Parse(argv []string, stderr io.Writer) (*Options, error) {
 	boolean(&o.SSL, "S", "ssl")
 	boolean(&o.NoColors, "n", "no-colors")
 	boolean(&o.NoRPath, "N", "no-rpath-completion")
+	boolean(&o.Quiet, "q", "quiet")
 	boolean(&o.Log, "l", "log")
 	boolean(&o.History, "Y", "history")
 	// Long-form only: registering "" as a short name would define a nameless flag.
@@ -433,6 +435,8 @@ Execution and output:
                               can keep several
   -l, --log                   write a timestamped transcript to
                               ~/.wsmancer/logs/<host>/ ($WSMANCER_LOG_DIR)
+  -q, --quiet                 suppress informational output (Info: lines);
+                              errors still print. Useful with -o json -x
   -n, --no-colors             disable colors
   -N, --no-rpath-completion   disable remote path completion
 

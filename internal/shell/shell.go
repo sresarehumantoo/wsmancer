@@ -40,9 +40,10 @@ type Shell struct {
 	o    *cli.Options
 	c    output.Colors
 	ed   lineedit.Editor
-	out  io.Writer
-	json bool
-	tty  bool // progress bars only make sense on a terminal
+	out   io.Writer
+	json  bool
+	quiet bool // suppress Info: lines
+	tty   bool // progress bars only make sense on a terminal
 	tx   *transfer.Client
 	log  *transcript.Log // nil unless -l/--log; all methods are nil-safe
 	hist *history.Store  // nil unless -Y/--history; all methods are nil-safe
@@ -275,7 +276,7 @@ func (sh *Shell) Run(ctx context.Context) error {
 	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(sigs)
 
-	if !sh.json {
+	if !sh.json && !sh.quiet {
 		fmt.Fprintf(sh.out, "%s\n", sh.c.Bold("wsmancer shell "+cli.Version))
 		fmt.Fprintf(sh.out, "%s %s\n", sh.c.Blue("Info:"), "type `help` for port status, `exit` to quit")
 	}
@@ -332,7 +333,7 @@ func (sh *Shell) startLog() {
 	}
 	sh.log = lg
 	sh.log.Event("=== session start: %s (%s) ===", sh.o.IP, sh.s.AuthMode())
-	if !sh.json {
+	if !sh.json && !sh.quiet {
 		fmt.Fprintf(sh.out, "%s session log: %s\n", sh.c.Blue("Info:"), lg.Path())
 	}
 }
@@ -423,8 +424,10 @@ func (sh *Shell) transferCmd(ctx context.Context, sigs <-chan os.Signal, verb, l
 			DurationMS: time.Since(start).Milliseconds(),
 		})
 	}
-	fmt.Fprintf(sh.out, "%s %s complete: %s (%s in %s)\n",
-		sh.c.Blue("Info:"), verb, src, humanBytes(moved), time.Since(start).Round(time.Millisecond))
+	if !sh.quiet {
+		fmt.Fprintf(sh.out, "%s %s complete: %s (%s in %s)\n",
+			sh.c.Blue("Info:"), verb, src, humanBytes(moved), time.Since(start).Round(time.Millisecond))
+	}
 	dst2 := dst
 	if dst2 == "" {
 		dst2 = "(default)"
@@ -808,7 +811,7 @@ Line editing (on a terminal):
 // tool's default posture, and a persisted history is exactly the sort of thing
 // that should never be quietly on.
 func (sh *Shell) announceHistory() {
-	if sh.hist == nil || sh.json {
+	if sh.hist == nil || sh.json || sh.quiet {
 		return
 	}
 	fmt.Fprintf(sh.out, "%s command history: %s %s\n", sh.c.Blue("Info:"), sh.hist.Path(),

@@ -64,13 +64,10 @@ func run() int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	if !jsonMode {
+	if !jsonMode && !opts.Quiet {
 		fmt.Fprintf(os.Stderr, "%s %s\n", c.Blue("Info:"), "auth: "+sess.AuthMode())
 		via := "connecting to " + sess.Endpoint()
 		if sess.ProxyAddr() != "" {
-			// Worth a line of its own: the whole failure mode --proxy exists to
-			// prevent is a dial quietly going out of the wrong interface, so the
-			// operator should be able to see that it did not.
 			via += " via socks5 " + sess.ProxyAddr()
 		}
 		fmt.Fprintf(os.Stderr, "%s %s\n", c.Blue("Info:"), via)

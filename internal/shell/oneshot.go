@@ -100,12 +100,13 @@ func (sh *Shell) startOnceLog(line string) {
 // history is set in exactly one place.
 func newShell(s *session.Session, o *cli.Options, stdout io.Writer) *Shell {
 	return &Shell{
-		s:    s,
-		o:    o,
-		c:    output.NewColors(!o.NoColors && !output.EnvDisablesColor()),
-		out:  stdout,
-		json: o.Output == "json",
-		tty:  isTerminal(stdout),
-		tx:   transfer.NewWithChunk(s, o.ChunkKB*1024),
+		s:     s,
+		o:     o,
+		c:     output.NewColors(!o.NoColors && !output.EnvDisablesColor()),
+		out:   stdout,
+		json:  o.Output == "json",
+		quiet: o.Quiet,
+		tty:   isTerminal(stdout),
+		tx:    transfer.NewWithChunk(s, o.ChunkKB*1024),
 	}
 }

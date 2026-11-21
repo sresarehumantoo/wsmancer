@@ -84,7 +84,7 @@ func (sh *Shell) loadScript(ctx context.Context, sigs <-chan os.Signal, path str
 	if err != nil {
 		return err // the script loaded, but we could not enumerate it
 	}
-	if !sh.json {
+	if !sh.json && !sh.quiet {
 		fmt.Fprintf(sh.out, "%s loaded %s (%d function%s available; `menu` to list)\n",
 			sh.c.Blue("Info:"), filepath.Base(path), len(added), plural(len(added)))
 	}

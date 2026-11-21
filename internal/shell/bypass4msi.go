@@ -62,7 +62,7 @@ const jumpMarker = "#jump"
 // works without it.
 func (sh *Shell) bypass4MSI(ctx context.Context, sigs <-chan os.Signal) error {
 	if sh.amsiPatched {
-		if !sh.json {
+		if !sh.json && !sh.quiet {
 			fmt.Fprintf(sh.out, "%s AMSI is already patched in this runspace\n", sh.c.Blue("Info:"))
 		}
 		return nil
@@ -71,7 +71,7 @@ func (sh *Shell) bypass4MSI(ctx context.Context, sigs <-chan os.Signal) error {
 	script := obfuscateBypass(bypass4MSITemplate, rand.New(rand.NewSource(cryptoSeed())))
 	steps := strings.Split(script, jumpMarker)
 
-	if !sh.json {
+	if !sh.json && !sh.quiet {
 		fmt.Fprintf(sh.out, "%s patching AMSI in %d steps (~%s)...\n",
 			sh.c.Blue("Info:"), len(steps), (time.Duration(len(steps)-1) * bypassStepPause).Round(time.Second))
 	}
@@ -116,7 +116,7 @@ func (sh *Shell) bypass4MSI(ctx context.Context, sigs <-chan os.Signal) error {
 
 	sh.amsiPatched = true
 	sh.log.Event("[bypass-4msi] AmsiScanBuffer patched")
-	if !sh.json {
+	if !sh.json && !sh.quiet {
 		fmt.Fprintf(sh.out, "%s AMSI patched in this runspace\n", sh.c.Blue("Info:"))
 	}
 	return nil
