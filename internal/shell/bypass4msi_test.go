@@ -17,7 +17,11 @@ func obf(seed int64) string {
 func TestObfuscationLeavesNoTelltaleLiterals(t *testing.T) {
 	for seed := int64(1); seed <= 20; seed++ {
 		got := obf(seed)
-		for _, lit := range []string{"amsi.dll", "AmsiScanBuffer", "kernel32.dll", "System.dll", "ntdll", "EtwEventWrite"} {
+		for _, lit := range []string{
+			"amsi.dll", "AmsiScanBuffer", "kernel32.dll", "System.dll",
+			"ntdll", "EtwEventWrite",
+			"_enableScriptBlockLogging", "enableScriptBlockLogging", "scriptBlockLoggingExplicitlyDisabled",
+		} {
 			if strings.Contains(got, lit) {
 				t.Errorf("seed %d: script still contains the literal %q", seed, lit)
 			}
@@ -86,7 +90,12 @@ func decodeCharExpr(t *testing.T, expr string) string {
 
 func TestCharExpressionRoundTrips(t *testing.T) {
 	r := rand.New(rand.NewSource(3))
-	for _, s := range []string{"amsi.dll", "AmsiScanBuffer", "kernel32.dll", `\`, "System.dll", "MyDelegateType", "ntdll", "EtwEventWrite"} {
+	for _, s := range []string{
+		"amsi.dll", "AmsiScanBuffer", "kernel32.dll", `\`, "System.dll", "MyDelegateType",
+		"ntdll", "EtwEventWrite",
+		"_enableScriptBlockLogging", "enableScriptBlockLogging", "scriptBlockLoggingExplicitlyDisabled",
+		"Static", "NonPublic",
+	} {
 		for i := 0; i < 40; i++ { // many draws: the encoding picks a form at random
 			expr := charExpression(s, r)
 			if got := decodeCharExpr(t, expr); got != s {
@@ -133,8 +142,8 @@ func TestPatchBytesAreUnchanged(t *testing.T) {
 // would put the whole patch in a single scanned block.
 func TestTemplateSplitsIntoSteps(t *testing.T) {
 	steps := strings.Split(obf(9), jumpMarker)
-	if len(steps) != 11 {
-		t.Errorf("got %d steps, want 11 (upstream's split + ETW patch)", len(steps))
+	if len(steps) != 12 {
+		t.Errorf("got %d steps, want 12", len(steps))
 	}
 	for i, s := range steps {
 		if strings.TrimSpace(s) == "" {
