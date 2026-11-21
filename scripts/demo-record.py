@@ -204,7 +204,7 @@ r.pump(6.0)
 r.beat(0.8)
 
 # 4. Remote path completion: a Windows backslash path, completed off the box.
-r.type("dir C:\\Us")
+r.type("dir C:\\Wi")
 r.beat(0.8)
 r.key("Tab", 1.7)
 r.key("Enter", 0.2)
