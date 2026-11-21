@@ -13,7 +13,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sresarehumantoo/wsmancer/internal/proxydial"
 )
@@ -62,6 +64,7 @@ type Options struct {
 	Command  string // one-shot; empty means interactive
 	Output   string // "text" or "json"
 	ChunkKB  int    // transfer chunk size; see --chunk-size
+	Timeout  int    // connect timeout in seconds; 0 means default (60)
 	NoColors bool
 	NoRPath  bool
 	Log      bool
@@ -121,6 +124,14 @@ func (o *Options) AuthMode() AuthMode {
 // cert login can never be stopped to ask for a password nobody has.
 func (o *Options) NeedsPassword() bool {
 	return o.AuthMode() == AuthPassword && o.Password == ""
+}
+
+// ConnectTimeout returns the connect timeout. Zero means use the default (60s).
+func (o *Options) ConnectTimeout() time.Duration {
+	if o.Timeout > 0 {
+		return time.Duration(o.Timeout) * time.Second
+	}
+	return 60 * time.Second
 }
 
 // Endpoint builds the WinRM URL. Port defaults follow the scheme.
@@ -189,6 +200,8 @@ func Parse(argv []string, stderr io.Writer) (*Options, error) {
 	fs.StringVar(&o.SPNPrefix, "spn", "HTTP", "")
 	fs.IntVar(&o.Skew, "skew", 0, "")
 	fs.IntVar(&o.ChunkKB, "chunk-size", 192, "")
+	timeout := fs.Int("T", 0, "")
+	fs.IntVar(timeout, "timeout", 0, "")
 
 	if err := fs.Parse(argv); err != nil {
 		return nil, fmt.Errorf("%w\n\nrun with --help for usage", err)
@@ -217,6 +230,13 @@ func Parse(argv []string, stderr io.Writer) (*Options, error) {
 	// an engagement, both reasons to let it come from the environment.
 	if o.Proxy == "" {
 		o.Proxy = os.Getenv("WSMANCER_PROXY")
+	}
+	if *timeout > 0 {
+		o.Timeout = *timeout
+	} else if s := os.Getenv("WSMANCER_TIMEOUT"); s != "" {
+		if v, err := strconv.Atoi(s); err == nil && v > 0 {
+			o.Timeout = v
+		}
 	}
 	return o, o.validate()
 }
@@ -362,6 +382,7 @@ Connection:
                               authentication); with them it is presented in the
                               TLS handshake alongside NTLM/Kerberos
   -k, --priv-key PATH         client private key (with -c)
+  -T, --timeout SECONDS       connect timeout (default 60; or $WSMANCER_TIMEOUT)
       --proxy URL             reach the target through a SOCKS5 proxy, e.g.
                               socks5://127.0.0.1:1080 (or $WSMANCER_PROXY);
                               user:pass@ is accepted. The target's name is
@@ -421,6 +442,7 @@ Execution and output:
 Environment variables:
   WSMANCER_PASSWORD           password (same as -p)
   WSMANCER_PROXY              SOCKS5 proxy URL (same as --proxy)
+  WSMANCER_TIMEOUT            connect timeout in seconds (same as -T)
   WSMANCER_HISTORY_DIR        override ~/.wsmancer/history for -Y
   WSMANCER_LOG_DIR            override ~/.wsmancer/logs for -l
   WSMANCER_EDITOR             set to "plain" to disable line editing

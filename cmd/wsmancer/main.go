@@ -75,7 +75,7 @@ func run() int {
 		}
 		fmt.Fprintf(os.Stderr, "%s %s\n", c.Blue("Info:"), via)
 	}
-	connCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	connCtx, cancel := context.WithTimeout(ctx, opts.ConnectTimeout())
 	defer cancel()
 	if err := sess.Connect(connCtx); err != nil {
 		return fail(c, jsonMode, "", fmt.Errorf("connect: %w", err))
