@@ -29,6 +29,7 @@ import (
 	"github.com/sresarehumantoo/wsmancer/internal/history"
 	"github.com/sresarehumantoo/wsmancer/internal/lineedit"
 	"github.com/sresarehumantoo/wsmancer/internal/output"
+	"github.com/sresarehumantoo/wsmancer/internal/psutil"
 	"github.com/sresarehumantoo/wsmancer/internal/session"
 	"github.com/sresarehumantoo/wsmancer/internal/transcript"
 	"github.com/sresarehumantoo/wsmancer/internal/transfer"
@@ -228,7 +229,7 @@ func (r remoteLister) ListDir(ctx context.Context, dir string) ([]complete.Entry
 	// One line per entry, "1|name" for directories, so parsing stays trivial.
 	script := fmt.Sprintf(
 		`Get-ChildItem -LiteralPath %s -Force -ErrorAction SilentlyContinue | `+
-			`ForEach-Object { "{0}|{1}" -f [int]$_.PSIsContainer,$_.Name }`, psQuote(target))
+			`ForEach-Object { "{0}|{1}" -f [int]$_.PSIsContainer,$_.Name }`, psutil.Quote(target))
 	res, err := r.s.RunRaw(ctx, script)
 	if err != nil {
 		return nil, err
@@ -245,12 +246,6 @@ func (r remoteLister) ListDir(ctx context.Context, dir string) ([]complete.Entry
 		}
 	}
 	return out, nil
-}
-
-// psQuote renders a PowerShell single-quoted literal (doubling embedded quotes),
-// so a path cannot break out and be evaluated.
-func psQuote(s string) string {
-	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
 }
 
 // isTerminal reports whether w is a character device, so a redirected or piped

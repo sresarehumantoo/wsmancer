@@ -28,6 +28,7 @@ import (
 	"github.com/sresarehumantoo/go-psrp/client"
 
 	"github.com/sresarehumantoo/wsmancer/internal/output"
+	"github.com/sresarehumantoo/wsmancer/internal/psutil"
 )
 
 // DefaultChunkSize is the raw bytes per round trip. Base64 inflates this by 4/3
@@ -250,7 +251,7 @@ func (c *Client) writeChunk(ctx context.Context, absRemote string, data []byte, 
 		`$b=[Convert]::FromBase64String('%s')
 $f=[IO.File]::Open(%s,[IO.FileMode]::%s,[IO.FileAccess]::Write)
 try{$f.Write($b,0,$b.Length)}finally{$f.Close()}`,
-		base64.StdEncoding.EncodeToString(data), psQuote(absRemote), mode)
+		base64.StdEncoding.EncodeToString(data), psutil.Quote(absRemote), mode)
 	if _, err := c.run(ctx, script); err != nil {
 		// The target enforces MaxEnvelopeSizekb (500KB by default), and base64
 		// inflates a chunk by 4/3. Say so, rather than leaving the operator with
@@ -410,7 +411,7 @@ func (c *Client) downloadGlob(ctx context.Context, pattern, local string, prog P
 func (c *Client) resolveRemoteGlob(ctx context.Context, pattern string) ([]remoteMatch, error) {
 	script := fmt.Sprintf(
 		`Get-Item -Path %s -Force -ErrorAction SilentlyContinue | `+
-			`ForEach-Object { "{0}|{1}" -f [int]$_.PSIsContainer,$_.FullName }`, psQuote(pattern))
+			`ForEach-Object { "{0}|{1}" -f [int]$_.PSIsContainer,$_.FullName }`, psutil.Quote(pattern))
 	res, err := c.run(ctx, script)
 	if err != nil {
 		return nil, err
@@ -449,7 +450,7 @@ $null=$f.Seek(%d,[IO.SeekOrigin]::Begin)
 $b=New-Object byte[] %d
 $n=$f.Read($b,0,%d)
 [Convert]::ToBase64String($b,0,$n)
-}finally{$f.Close()}`, psQuote(absRemote), off, n, n)
+}finally{$f.Close()}`, psutil.Quote(absRemote), off, n, n)
 		res, err := c.run(ctx, script)
 		if err != nil {
 			return err
@@ -489,7 +490,7 @@ func (c *Client) verify(ctx context.Context, absRemote, localHex string, localSi
 	script := fmt.Sprintf(
 		`$p=%s
 "{0}:{1}" -f (Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash,(Get-Item -LiteralPath $p -Force).Length`,
-		psQuote(absRemote))
+		psutil.Quote(absRemote))
 	res, err := c.run(ctx, script)
 	if err != nil {
 		// Get-FileHash needs PowerShell 4+; don't fail an otherwise good
@@ -519,7 +520,7 @@ func (c *Client) verify(ctx context.Context, absRemote, localHex string, localSi
 // directory, not the shell's location, so this must happen before any IO.
 func (c *Client) resolveRemote(ctx context.Context, p string) (string, error) {
 	script := fmt.Sprintf(
-		`$ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath(%s)`, psQuote(p))
+		`$ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath(%s)`, psutil.Quote(p))
 	res, err := c.run(ctx, script)
 	if err != nil {
 		return "", err
@@ -537,7 +538,7 @@ func (c *Client) ensureRemoteDir(ctx context.Context, dir string) error {
 	}
 	script := fmt.Sprintf(
 		`if(-not (Test-Path -LiteralPath %s)){$null=New-Item -ItemType Directory -Force -Path %s}`,
-		psQuote(dir), psQuote(dir))
+		psutil.Quote(dir), psutil.Quote(dir))
 	_, err := c.run(ctx, script)
 	return err
 }
@@ -546,7 +547,7 @@ func (c *Client) ensureRemoteDir(ctx context.Context, dir string) error {
 func (c *Client) stat(ctx context.Context, absRemote string) (isDir bool, size int64, err error) {
 	script := fmt.Sprintf(
 		`$i=Get-Item -LiteralPath %s -Force -ErrorAction Stop
-"{0}:{1}" -f $i.PSIsContainer,$(if($i.PSIsContainer){0}else{$i.Length})`, psQuote(absRemote))
+"{0}:{1}" -f $i.PSIsContainer,$(if($i.PSIsContainer){0}else{$i.Length})`, psutil.Quote(absRemote))
 	res, err := c.run(ctx, script)
 	if err != nil {
 		return false, 0, err
@@ -573,7 +574,7 @@ func (c *Client) listFiles(ctx context.Context, absRemote string) ([]string, err
 	script := fmt.Sprintf(
 		`$root=(Get-Item -LiteralPath %s -Force).FullName.TrimEnd('\')
 Get-ChildItem -LiteralPath $root -Recurse -Force -File | ForEach-Object { $_.FullName.Substring($root.Length+1) }`,
-		psQuote(absRemote))
+		psutil.Quote(absRemote))
 	res, err := c.run(ctx, script)
 	if err != nil {
 		return nil, err
@@ -664,13 +665,6 @@ func singleString(res *client.Result) (string, error) {
 		b.WriteString(output.Text(v))
 	}
 	return b.String(), nil
-}
-
-// psQuote renders a Go string as a PowerShell single-quoted literal, where the
-// only escape is a doubled quote. Single quotes prevent PowerShell from
-// expanding $(...) or variables inside a path we do not control.
-func psQuote(s string) string {
-	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
 }
 
 // hasGlobMeta reports whether p should be treated as a wildcard pattern. Only *

@@ -8,6 +8,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/sresarehumantoo/wsmancer/internal/psutil"
+
 	"github.com/sresarehumantoo/go-psrp/client"
 
 	"github.com/sresarehumantoo/wsmancer/internal/output"
@@ -60,7 +62,7 @@ func (sh *Shell) psComplete(line string, pos int) (int, []string) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), psCompleteTimeout)
 	defer cancel()
-	res, err := sh.s.RunRaw(ctx, fmt.Sprintf(psCompleteScript, psQuote(line), charPos))
+	res, err := sh.s.RunRaw(ctx, fmt.Sprintf(psCompleteScript, psutil.Quote(line), charPos))
 	if err != nil || res == nil {
 		sh.psFailedAt = time.Now()
 		return 0, nil

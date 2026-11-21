@@ -4,6 +4,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/sresarehumantoo/wsmancer/internal/psutil"
 )
 
 // A hostile target controls the filenames Get-ChildItem returns, so anything
@@ -72,8 +74,8 @@ func TestPSQuoteEscapes(t *testing.T) {
 		`a'b'c`:          `'a''b''c'`,
 	}
 	for in, want := range cases {
-		if got := psQuote(in); got != want {
-			t.Errorf("psQuote(%q) = %q, want %q", in, got, want)
+		if got := psutil.Quote(in); got != want {
+			t.Errorf("psutil.Quote(%q) = %q, want %q", in, got, want)
 		}
 	}
 }
