@@ -5,7 +5,6 @@ package session
 import (
 	"context"
 	"crypto/tls"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -21,6 +20,7 @@ import (
 	"github.com/sresarehumantoo/wsmancer/internal/auth/ntlmseal"
 	"github.com/sresarehumantoo/wsmancer/internal/cli"
 	"github.com/sresarehumantoo/wsmancer/internal/proxydial"
+	"github.com/sresarehumantoo/wsmancer/internal/psutil"
 )
 
 type Session struct {
@@ -170,7 +170,7 @@ func build(o *cli.Options) (*client.Client, string, string, error) {
 		mode = fmt.Sprintf("Kerberos + sealing (%s)", spn)
 
 	case cli.AuthHash:
-		nt, err := parseNTHash(o.Hash)
+		nt, err := psutil.ParseNTHash(o.Hash)
 		if err != nil {
 			return nil, "", "", err
 		}
@@ -291,19 +291,3 @@ func splitUser(user, realm string) (string, string) {
 	return user, realm
 }
 
-// parseNTHash accepts a bare 32-hex NT hash or the LM:NT form pasted from
-// secretsdump output.
-func parseNTHash(s string) ([]byte, error) {
-	s = strings.TrimSpace(s)
-	if i := strings.LastIndex(s, ":"); i >= 0 {
-		s = s[i+1:]
-	}
-	b, err := hex.DecodeString(s)
-	if err != nil {
-		return nil, fmt.Errorf("-H/--hash is not valid hex: %w", err)
-	}
-	if len(b) != 16 {
-		return nil, fmt.Errorf("-H/--hash must be a 16-byte NT hash (32 hex chars), got %d", len(b))
-	}
-	return b, nil
-}

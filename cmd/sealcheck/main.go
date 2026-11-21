@@ -10,18 +10,17 @@ package main
 
 import (
 	"context"
-	"encoding/hex"
 	"flag"
 	"fmt"
 	"log/slog"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/sresarehumantoo/go-psrp/client"
 
 	"github.com/sresarehumantoo/wsmancer/internal/auth/krbseal"
 	"github.com/sresarehumantoo/wsmancer/internal/auth/ntlmseal"
+	"github.com/sresarehumantoo/wsmancer/internal/psutil"
 )
 
 func main() {
@@ -82,7 +81,7 @@ func main() {
 		cfg.Krb5ConfPath = *krb5conf
 		mode = "go-psrp native Kerberos (ccache)"
 	} else if *seal || *hash != "" {
-		nt, err := parseNTHash(*hash)
+		nt, err := psutil.ParseNTHash(*hash)
 		if err != nil {
 			die("parse hash", err)
 		}
@@ -138,20 +137,3 @@ func die(where string, err error) {
 	os.Exit(1)
 }
 
-// parseNTHash accepts "" (none), a bare 32-hex NT hash, or "LM:NT".
-func parseNTHash(s string) ([]byte, error) {
-	if s == "" {
-		return nil, nil
-	}
-	if i := strings.LastIndex(s, ":"); i >= 0 {
-		s = s[i+1:] // take NT half of aad3b...:NT
-	}
-	b, err := hex.DecodeString(strings.TrimSpace(s))
-	if err != nil {
-		return nil, err
-	}
-	if len(b) != 16 {
-		return nil, fmt.Errorf("NT hash must be 16 bytes (32 hex), got %d", len(b))
-	}
-	return b, nil
-}
