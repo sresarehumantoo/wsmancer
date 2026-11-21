@@ -1,0 +1,19 @@
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gosec
+  disable-all: true
+
+linters-settings:
+  gosec:
+    excludes:
+      - G404  # math/rand is used intentionally for obfuscation seeded from crypto/rand
+
+issues:
+  exclude-dirs:
+    - dist
