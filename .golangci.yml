@@ -12,8 +12,27 @@ linters:
 linters-settings:
   gosec:
     excludes:
-      - G404  # math/rand is used intentionally for obfuscation seeded from crypto/rand
+      - G115  # integer overflow conversions are bounded by protocol field widths
+      - G204  # subprocess args are test constants, not user input
+      - G306  # test temp files do not need 0600
+      - G401  # HMAC-MD5 required by NTLM/Kerberos protocols
+      - G402  # TLS InsecureSkipVerify implements --insecure; test helpers use TLS 1.0
+      - G404  # math/rand seeded from crypto/rand for obfuscation
+      - G405  # RC4 required by NTLM protocol
+      - G406  # MD4 required by NTLM protocol
+      - G501  # crypto/md5 required by NTLM protocol
+      - G503  # crypto/rc4 required by NTLM protocol
+      - G506  # x/crypto/md4 required by NTLM protocol
+  errcheck:
+    exclude-functions:
+      - encoding/binary.Write  # writing to bytes.Buffer cannot fail
+      - (net.Conn).SetDeadline  # best-effort deadline on an active conn
+      - crypto/rand.Read  # panics on failure since Go 1.20
 
 issues:
   exclude-dirs:
     - dist
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck

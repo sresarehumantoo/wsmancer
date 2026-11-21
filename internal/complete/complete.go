@@ -150,8 +150,8 @@ func Analyze(line string, pos int) Context {
 	// Everything except the local side of upload/download is a command that runs
 	// on the target, so its path arguments are completed against the remote
 	// filesystem, `dir C:\`, `type .\notes.txt`, `.\bin -Path C:\...` all work.
-	target := TargetRemote
 	var options []string
+	target := TargetRemote
 	switch verb {
 	case "upload":
 		// upload <local> <remote>
