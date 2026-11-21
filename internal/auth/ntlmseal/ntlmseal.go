@@ -527,7 +527,7 @@ func (t *connRoundTripper) dialAndHandshake(req *http.Request) error {
 		return fmt.Errorf("ntlm leg1: %w", err)
 	}
 	token := ntlmToken(resp.Header)
-	io.Copy(io.Discard, resp.Body)
+	_, _ = io.Copy(io.Discard, resp.Body)
 	resp.Body.Close()
 	if debugOn {
 		fmt.Fprintf(os.Stderr, "[ntlmseal] leg1 status=%d challenge=%v\n", resp.StatusCode, token != "")

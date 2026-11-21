@@ -151,7 +151,7 @@ func Analyze(line string, pos int) Context {
 	// on the target, so its path arguments are completed against the remote
 	// filesystem, `dir C:\`, `type .\notes.txt`, `.\bin -Path C:\...` all work.
 	var options []string
-	target := TargetRemote
+	var target Target
 	switch verb {
 	case "upload":
 		// upload <local> <remote>

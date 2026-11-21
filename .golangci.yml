@@ -23,6 +23,10 @@ linters-settings:
       - G501  # crypto/md5 required by NTLM protocol
       - G503  # crypto/rc4 required by NTLM protocol
       - G506  # x/crypto/md4 required by NTLM protocol
+  staticcheck:
+    checks:
+      - "all"
+      - "-SA1019"  # x/crypto/md4 is deprecated but required by NTLM
   errcheck:
     exclude-functions:
       - encoding/binary.Write  # writing to bytes.Buffer cannot fail
