@@ -241,6 +241,29 @@ regex is not matching vacuously.
   Verified both ways on Forest: 8/8 enforcing (including "the obfuscated payload
   itself got past the active AMSI"), 7/7 not enforcing. Reverting the HandleRef
   fix fails it. Restore the box afterwards with `-DisableRealtimeMonitoring $true`.
+  - **ETW and ScriptBlock logging** are now patched alongside AMSI. The harness
+    should be extended to verify both: for ETW, read the `EtwEventWrite` prologue
+    bytes before and after (same technique as the AMSI bytes check); for
+    ScriptBlock logging, confirm that `ScriptBlock.GetScriptBlockLoggingSetting()`
+    returns false after the patch, or that a command executed after the patch does
+    not appear in the PowerShell Operational event log (requires admin to read
+    `Microsoft-Windows-PowerShell/Operational`). Neither is verified by the
+    existing harness yet.
+- `bypass-clm` **does not have a test harness yet**. What it needs to prove:
+  - **bytes**: the bytes at `GetSystemLockdownPolicy`'s entry point became the
+    stub (same shape as the AMSI bytes check).
+  - **behavior**: `[System.Management.Automation.Security.SystemPolicy]::GetSystemLockdownPolicy()`
+    returns `FullLanguage` after the patch.
+  - **end-to-end**: a language feature CLM restricts (e.g. `Add-Type`,
+    `[System.IO.File]::ReadAllText(...)`, defining a class) fails before the
+    patch and succeeds after it. This is **unassertable on a target that does
+    not enforce CLM**, which is the common case; the harness must detect this
+    and SKIP rather than pass vacuously.
+  - **differential**: the same controls as bypass4msi-test.py, a build with the
+    patch removed must fail the behavior and end-to-end checks.
+  The harness should follow the same structure as `bypass4msi-test.py`: take
+  target, user, realm, and credentials from the environment, and define its
+  probes both before and after the patch.
 - `scripts/pscomplete-test.py <host> <user> <realm> <password>`, parameter and
   value completion. The risk it exists for is not "are there candidates" but "is
   the line still correct afterwards", so the assertions **run** the completed
