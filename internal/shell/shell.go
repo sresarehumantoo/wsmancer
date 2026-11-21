@@ -777,7 +777,7 @@ Working now:
                             a bare name resolves against -e/--executables)
   donut-loader -process_id <pid> -donutfile <local .bin>
                             inject local donut shellcode into a remote process (x64 only)
-  bypass-4msi               patch AmsiScanBuffer + EtwEventWrite (noisy; do it last)
+  bypass-4msi               patch AMSI + ETW + ScriptBlock logging (noisy; do it last)
   bypass-clm                patch GetSystemLockdownPolicy -> FullLanguage
   <name>.ps1            load that script from the -s directory into the session
   menu                  list the functions loaded from your scripts
