@@ -110,7 +110,7 @@ func New(raw string) (*Dialer, error) {
 }
 
 // Addr reports the proxy's host:port, or "" for a direct dialer. It is for
-// banners and error text; nothing behavioural keys off it.
+// banners and error text; nothing behavioral keys off it.
 func (d *Dialer) Addr() string {
 	if d == nil {
 		return ""

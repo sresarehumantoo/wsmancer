@@ -110,7 +110,7 @@ func (sh *Shell) bypass4MSI(ctx context.Context, sigs <-chan os.Signal) error {
 			if !sh.json {
 				fmt.Fprintln(sh.out, sh.c.Yellow("^C (canceled part-way; AMSI is NOT patched)"))
 			}
-			return errPayloadCancelled
+			return errPayloadCanceled
 		case <-time.After(bypassStepPause):
 		}
 	}

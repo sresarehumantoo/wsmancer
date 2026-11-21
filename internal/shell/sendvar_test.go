@@ -69,8 +69,8 @@ func TestStreamB64VarCtrlCStopsSendingAndReportsCancelled(t *testing.T) {
 	}
 
 	err := streamB64Var("__ewdonut", payload(scriptChunk*4), sigs, run)
-	if !errors.Is(err, errPayloadCancelled) {
-		t.Fatalf("err = %v, want errPayloadCancelled", err)
+	if !errors.Is(err, errPayloadCanceled) {
+		t.Fatalf("err = %v, want errPayloadCanceled", err)
 	}
 	// reportErr suppresses context.Canceled, which is how the "^C" line stays the
 	// only thing the operator sees. Callers re-wrap with %w, so the chain must
@@ -95,8 +95,8 @@ func TestStreamB64VarConsumesCtrlCOnFinalChunk(t *testing.T) {
 		return c.run(script)
 	}
 
-	if err := streamB64Var("__wsm", payload(64), sigs, run); !errors.Is(err, errPayloadCancelled) {
-		t.Fatalf("err = %v, want errPayloadCancelled", err)
+	if err := streamB64Var("__wsm", payload(64), sigs, run); !errors.Is(err, errPayloadCanceled) {
+		t.Fatalf("err = %v, want errPayloadCanceled", err)
 	}
 	select {
 	case <-sigs:

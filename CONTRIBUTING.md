@@ -163,7 +163,7 @@ explains why each is shaped the way it is:
   text, so both are carried verbatim.
 - `checkRelatesTo` in `sendEnvelope` correlates every response to the request
   that produced it (WS-Addressing `MessageID` → `RelatesTo`), and is the stack's
-  **only** replay/substitution defence, the sealing layers give integrity but
+  **only** replay/substitution defense, the sealing layers give integrity but
   Kerberos has no freshness signal available (see `internal/auth/krbseal`). A
   missing `RelatesTo` fails; absence must not be a skip, or stripping one header
   is the bypass. The compare is case-insensitive because `Delete` builds its

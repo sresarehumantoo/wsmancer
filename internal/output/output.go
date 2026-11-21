@@ -19,7 +19,7 @@ import (
 )
 
 // ANSI colors, suppressed when --no-colors is set or the environment asks for
-// colourless output.
+// colorless output.
 type Colors struct{ enabled bool }
 
 func NewColors(enabled bool) Colors { return Colors{enabled} }

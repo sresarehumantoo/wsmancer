@@ -321,7 +321,7 @@ dependency (no `replace`). It carries the patches upstream lacks, marked
   request that produced it, comparing the WS-Addressing `MessageID` the client
   stamped on the request against the `RelatesTo` the server echoes back. All 11
   request methods funnel through `sendEnvelope`, so no path opts out. This is the
-  stack's **only** replay/substitution defence: the sealing layers give integrity
+  stack's **only** replay/substitution defense: the sealing layers give integrity
   but not freshness, and Kerberos in particular has no freshness signal available
   at its own layer (the acceptor's sequence number is a measured constant zero on
   both etypes, so `ntlmseal`'s counter check cannot be copied over, the

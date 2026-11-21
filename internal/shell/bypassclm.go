@@ -59,7 +59,7 @@ func (sh *Shell) bypassCLM(ctx context.Context, sigs <-chan os.Signal) error {
 			if !sh.json {
 				fmt.Fprintln(sh.out, sh.c.Yellow("^C (canceled part-way; CLM is NOT bypassed)"))
 			}
-			return errPayloadCancelled
+			return errPayloadCanceled
 		case <-time.After(bypassStepPause):
 		}
 	}

@@ -17,10 +17,10 @@ import (
 // headroom.
 const scriptChunk = 60 * 1024
 
-// errPayloadCancelled reports a Ctrl-C during the streaming phase. It wraps
+// errPayloadCanceled reports a Ctrl-C during the streaming phase. It wraps
 // context.Canceled so that reportErr stays silent: sendB64Var has already told
 // the operator what happened, and every caller re-wraps this with %w.
-var errPayloadCancelled = fmt.Errorf("canceled before the payload was run: %w", context.Canceled)
+var errPayloadCanceled = fmt.Errorf("canceled before the payload was run: %w", context.Canceled)
 
 // sendB64Var streams a base64 string into a global variable on the target in
 // envelope-sized chunks, so a payload larger than one PSRP message (a big script
@@ -46,7 +46,7 @@ func (sh *Shell) sendB64Var(ctx context.Context, sigs <-chan os.Signal, name, b6
 		_, runErr := sh.s.RunRaw(ctx, script)
 		return runErr
 	})
-	if errors.Is(err, errPayloadCancelled) && !sh.json {
+	if errors.Is(err, errPayloadCanceled) && !sh.json {
 		fmt.Fprintln(sh.out, sh.c.Yellow("^C (canceled; nothing was run on the target)"))
 	}
 	if err != nil {
@@ -85,7 +85,7 @@ func streamB64Var(name, b64 string, sigs <-chan os.Signal, run func(script strin
 		}
 		select {
 		case <-sigs:
-			return errPayloadCancelled
+			return errPayloadCanceled
 		default:
 		}
 	}

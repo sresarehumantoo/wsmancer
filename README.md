@@ -276,7 +276,7 @@ falls back to plain reads so automation is unchanged):
 | Ctrl-D | exit |
 
 As you type, the most recent matching command from this session's history is
-shown greyed-out after the cursor; press → to accept it.
+shown grayed-out after the cursor; press → to accept it.
 
 **History is in memory only unless you ask otherwise.** Session commands
 routinely contain passwords and hashes, so nothing is written to disk by default.
