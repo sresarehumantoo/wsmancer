@@ -417,6 +417,15 @@ Execution and output:
 
   -V, --version               print version
   -h, --help                  this message
+
+Environment variables:
+  WSMANCER_PASSWORD           password (same as -p)
+  WSMANCER_PROXY              SOCKS5 proxy URL (same as --proxy)
+  WSMANCER_HISTORY_DIR        override ~/.wsmancer/history for -Y
+  WSMANCER_LOG_DIR            override ~/.wsmancer/logs for -l
+  WSMANCER_EDITOR             set to "plain" to disable line editing
+  WSMANCER_DEBUG              non-empty enables PSRP debug logging to stderr
+  NO_COLOR                    disable colors (no-color.org convention)
 `
 
 func PrintUsage(w io.Writer) { fmt.Fprint(w, usage) }
