@@ -9,7 +9,7 @@ import (
 )
 
 func obf(seed int64) string {
-	return obfuscateBypass(bypass4MSITemplate, rand.New(rand.NewSource(seed)))
+	return obfuscateBypass(bypass4MSITemplate, 2, bypassVarCount, rand.New(rand.NewSource(seed)))
 }
 
 // The whole point of the randomisation: the script that patches AMSI is itself
@@ -47,7 +47,7 @@ func TestObfuscationConsumesEveryPlaceholder(t *testing.T) {
 // would then silently patch nothing.
 func TestVar1DoesNotClobberVar12(t *testing.T) {
 	tmpl := ">><VAR1>>< = 1\n>><VAR12>>< = 2\n"
-	got := obfuscateBypass(tmpl, rand.New(rand.NewSource(7)))
+	got := obfuscateBypass(tmpl, 0, 12, rand.New(rand.NewSource(7)))
 	names := regexp.MustCompile(`\$[A-Za-z0-9]+`).FindAllString(got, -1)
 	if len(names) != 2 {
 		t.Fatalf("got %d variables in %q, want 2", len(names), got)

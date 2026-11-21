@@ -77,6 +77,7 @@ type Shell struct {
 	// so instead of re-patching bytes that are already patched (and whose helper
 	// functions the payload removed on its way out). Mirrors upstream.
 	amsiPatched bool
+	clmBypassed bool
 
 	// once marks a -x shell: one command, then the process exits. It changes two
 	// things, both because there is no next prompt to serve, a forgotten shell
@@ -161,7 +162,7 @@ func (sh *Shell) openHistory() *history.Store {
 // completableVerbs are the built-ins offered when completing the first word.
 // Loaded post-ex functions and -s script names are added dynamically; see
 // verbCandidates.
-var completableVerbs = []string{"bypass-4msi", "cls", "clear", "donut-loader", "download", "exit", "help", "invoke-binary", "menu", "quit", "services", "upload"}
+var completableVerbs = []string{"bypass-4msi", "bypass-clm", "cls", "clear", "donut-loader", "download", "exit", "help", "invoke-binary", "menu", "quit", "services", "upload"}
 
 // completeWord is the Tab handler. It never returns an error: a failed or slow
 // completion yields no candidates rather than disturbing the prompt.
@@ -364,6 +365,8 @@ func (sh *Shell) dispatch(ctx context.Context, sigs <-chan os.Signal, line strin
 		return false, sh.donutLoader(ctx, sigs, line)
 	case "bypass-4msi":
 		return false, sh.bypass4MSI(ctx, sigs)
+	case "bypass-clm":
+		return false, sh.bypassCLM(ctx, sigs)
 	}
 	// A bare "<name>.ps1" from the -s directory loads that script into the
 	// runspace rather than running it as a remote command.
@@ -775,6 +778,7 @@ Working now:
   donut-loader -process_id <pid> -donutfile <local .bin>
                             inject local donut shellcode into a remote process (x64 only)
   bypass-4msi               patch AmsiScanBuffer + EtwEventWrite (noisy; do it last)
+  bypass-clm                patch GetSystemLockdownPolicy -> FullLanguage
   <name>.ps1            load that script from the -s directory into the session
   menu                  list the functions loaded from your scripts
   services              list non-system services, paths, and your access (privesc recon)

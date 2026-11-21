@@ -69,7 +69,7 @@ func (sh *Shell) bypass4MSI(ctx context.Context, sigs <-chan os.Signal) error {
 		return nil
 	}
 
-	script := obfuscateBypass(bypass4MSITemplate, rand.New(rand.NewSource(cryptoSeed())))
+	script := obfuscateBypass(bypass4MSITemplate, 2, bypassVarCount, rand.New(rand.NewSource(cryptoSeed())))
 	steps := strings.Split(script, jumpMarker)
 
 	if !sh.json && !sh.quiet {
@@ -132,13 +132,11 @@ func (sh *Shell) bypass4MSI(ctx context.Context, sigs <-chan os.Signal) error {
 //
 // Four transformations, in upstream's order: function names, variable names, the
 // marked string literals, then keyword casing.
-func obfuscateBypass(tmpl string, r *rand.Rand) string {
-	// Function and variable names. The trailing ">><" in each placeholder is what
-	// keeps VAR1 from also matching inside VAR12.
-	for i := 1; i <= 2; i++ {
+func obfuscateBypass(tmpl string, funcs, vars int, r *rand.Rand) string {
+	for i := 1; i <= funcs; i++ {
 		tmpl = strings.ReplaceAll(tmpl, fmt.Sprintf(">><FUNCTION%d>><", i), "Get-"+randomIdent(r, 7, 17))
 	}
-	for i := 1; i <= bypassVarCount; i++ {
+	for i := 1; i <= vars; i++ {
 		tmpl = strings.ReplaceAll(tmpl, fmt.Sprintf(">><VAR%d>><", i), "$"+randomIdent(r, 7, 17))
 	}
 	tmpl = replaceMarkedStrings(tmpl, r)
@@ -210,7 +208,10 @@ func oneCharExpression(c byte, r *rand.Rand) string {
 // casing changes nothing but the bytes a signature would match on.
 var bypassCaseWords = []string{
 	"System.Runtime.InteropServices.Marshal",
+	"System.Runtime.CompilerServices.RuntimeHelpers",
+	"System.Management.Automation.ScriptBlock",
 	"System.Reflection.Emit.AssemblyBuilderAccess",
+	"System.Reflection.BindingFlags",
 	"System.Reflection.CallingConventions",
 	"System.Reflection.AssemblyName",
 	"System.MulticastDelegate",
@@ -220,6 +221,9 @@ var bypassCaseWords = []string{
 	".DefineConstructor",
 	".DefineMethod",
 	".DefineDynamicModule",
+	".PrepareMethod",
+	".GetFunctionPointer",
+	".MethodHandle",
 	"function ",
 	"ForEach-Object",
 	"Where-Object",
