@@ -2,7 +2,9 @@ package shell
 
 import (
 	"context"
+	crand "crypto/rand"
 	_ "embed"
+	"encoding/binary"
 	"fmt"
 	"math/rand"
 	"os"
@@ -66,7 +68,7 @@ func (sh *Shell) bypass4MSI(ctx context.Context, sigs <-chan os.Signal) error {
 		return nil
 	}
 
-	script := obfuscateBypass(bypass4MSITemplate, rand.New(rand.NewSource(time.Now().UnixNano())))
+	script := obfuscateBypass(bypass4MSITemplate, rand.New(rand.NewSource(cryptoSeed())))
 	steps := strings.Split(script, jumpMarker)
 
 	if !sh.json {
@@ -242,6 +244,14 @@ func randomCase(w string, r *rand.Rand) string {
 		}
 	}
 	return string(b)
+}
+
+func cryptoSeed() int64 {
+	var buf [8]byte
+	if _, err := crand.Read(buf[:]); err != nil {
+		panic("crypto/rand failed: " + err.Error())
+	}
+	return int64(binary.LittleEndian.Uint64(buf[:]))
 }
 
 const identAlphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
