@@ -42,11 +42,11 @@ the load-bearing details for every package below.
   `forgotten.go` recognizes a shell the target no longer has and recovers onto a
   new one, announcing the state loss (see the convention below). `postex.go`
   (`-s`, `menu`), `invokebinary.go`, `donutloader.go` (+ its `preflight` probe)
-  and `bypass4msi.go` are the post-ex set; all payload streaming goes through
-  `sendvar.go`'s `sendB64Var`, which chunks into envelope-sized pieces, honours
-  Ctrl-C, and length-checks the result. `bypass4msi.go`'s per-invocation
-  obfuscation is **functional, not decoration**, AMSI scans the script that
-  patches AMSI.
+  `bypass4msi.go` and `bypassclm.go` are the post-ex set; all payload streaming
+  goes through `sendvar.go`'s `sendB64Var`, which chunks into envelope-sized
+  pieces, honours Ctrl-C, and length-checks the result. `bypass4msi.go`'s
+  per-invocation obfuscation is **functional, not decoration**, AMSI scans the
+  script that patches AMSI; the same obfuscation applies to `bypassclm.go`.
 - `internal/lineedit/`, line editor behind an `Editor` interface; wraps
   `reeflective/readline` on a terminal, plain reads for pipes/scripts. History is
   in-memory by default (session commands contain secrets). **Preserve the
@@ -174,17 +174,19 @@ explains why each is shaped the way it is:
 ## Build / test / run
 
 ```sh
-make check                           # what CI runs: gofmt + go vet + both test sets
+make check                           # gofmt + go vet + tests
 make build                           # -> ./wsmancer
 make mutants                         # the ntlmseal + krbseal mutation gates (no target needed)
 
 ./wsmancer -i dc01.corp.local -u svc-account -r corp.local -p "$PASS"
 ```
 
-`make check` is `gofmt` + `go vet ./...` + `go test ./...` + the mutation gates.
+`make check` is `gofmt` + `go vet ./...` + `go test ./...`. CI additionally
+runs `golangci-lint` in the lint job and `make mutants` as a separate job.
 There is one module now (the fork is an external dependency), so `go test ./...`
 from the root is complete; the fork's own tests live in its repo. `make check`
-is still the thing to run because it also gofmt-checks and runs `make mutants`.
+is still the thing to run locally because it also gofmt-checks; run
+`make mutants` separately before pushing.
 
 The `wsmancer` binary is gitignored.
 
@@ -223,7 +225,7 @@ The harnesses, one line each (detail, traps and results in
 | `oneshot-test.py` | that `-x` runs the built-ins, plus its exit codes, json and transcript |
 | `batch-test.py` | that `-x -` runs a command stream over one connection with state persisting, NDJSON per command, isolated mid-batch failures |
 | `ctrlc-latency.py` | Ctrl-C cancel latency, "prompt back" vs "shell usable" |
-| `bypass4msi-test.py` | the AMSI patch, three ways (bytes, behavior, end-to-end) |
+| `bypass4msi-test.py` | the AMSI patch, three ways (bytes, behavior, end-to-end); ETW and ScriptBlock logging patches need extending |
 | `pscomplete-test.py` | parameter/value completion, and that the line is still correct after |
 | `history-test.py` | the opt-in persistent history, across a reconnect |
 | `proxy-test.py` (`--offline`, `--netns`, live) | `--proxy`, asserting on what the proxy *saw* |
@@ -402,7 +404,7 @@ that settled it.
   client, the fork's `Close` latches `closed`, and a client whose shell is gone
   still reports itself connected, so reconnecting the old one cannot work.
   Recovery is **loud and never re-runs the command**: the new runspace has none
-  of the old one's state, and `bypass-4msi` patches AMSI in the process the shell
+  of the old one's state, and `bypass-4msi`/`bypass-clm` patch the process the shell
   ran in, so a silent re-create would leave the operator's next post-ex command
   walking into an unpatched AMSI. Detection keys on the fault's *message text*,
   never on WSManFault code `2150858843`, that code also means "command
