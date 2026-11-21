@@ -43,8 +43,8 @@ import (
 var bypass4MSITemplate string
 
 // bypassVarCount is how many >><VARn>>< placeholders the template carries.
-// Upstream's has 12; VAR13 belongs to this port's compatibility fix, below.
-const bypassVarCount = 13
+// Upstream's has 12; VAR13 is this port's HandleRef fix, VAR14-16 are the ETW patch.
+const bypassVarCount = 16
 
 // bypassStepPause matches upstream's 2s wait between steps. The payload is split
 // into ten fragments that are run as separate commands, and the pause is part of
@@ -63,7 +63,7 @@ const jumpMarker = "#jump"
 func (sh *Shell) bypass4MSI(ctx context.Context, sigs <-chan os.Signal) error {
 	if sh.amsiPatched {
 		if !sh.json && !sh.quiet {
-			fmt.Fprintf(sh.out, "%s AMSI is already patched in this runspace\n", sh.c.Blue("Info:"))
+			fmt.Fprintf(sh.out, "%s AMSI and ETW are already patched in this runspace\n", sh.c.Blue("Info:"))
 		}
 		return nil
 	}
@@ -115,9 +115,9 @@ func (sh *Shell) bypass4MSI(ctx context.Context, sigs <-chan os.Signal) error {
 	}
 
 	sh.amsiPatched = true
-	sh.log.Event("[bypass-4msi] AmsiScanBuffer patched")
+	sh.log.Event("[bypass-4msi] AmsiScanBuffer + EtwEventWrite patched")
 	if !sh.json && !sh.quiet {
-		fmt.Fprintf(sh.out, "%s AMSI patched in this runspace\n", sh.c.Blue("Info:"))
+		fmt.Fprintf(sh.out, "%s AMSI and ETW patched in this runspace\n", sh.c.Blue("Info:"))
 	}
 	return nil
 }

