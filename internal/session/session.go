@@ -290,4 +290,3 @@ func splitUser(user, realm string) (string, string) {
 	}
 	return user, realm
 }
-

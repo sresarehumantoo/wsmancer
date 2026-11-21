@@ -136,4 +136,3 @@ func die(where string, err error) {
 	fmt.Fprintf(os.Stderr, "[!] %s: %v\n", where, err)
 	os.Exit(1)
 }
-

@@ -36,17 +36,17 @@ import (
 )
 
 type Shell struct {
-	s    *session.Session
-	o    *cli.Options
-	c    output.Colors
-	ed   lineedit.Editor
+	s     *session.Session
+	o     *cli.Options
+	c     output.Colors
+	ed    lineedit.Editor
 	out   io.Writer
 	json  bool
 	quiet bool // suppress Info: lines
 	tty   bool // progress bars only make sense on a terminal
-	tx   *transfer.Client
-	log  *transcript.Log // nil unless -l/--log; all methods are nil-safe
-	hist *history.Store  // nil unless -Y/--history; all methods are nil-safe
+	tx    *transfer.Client
+	log   *transcript.Log // nil unless -l/--log; all methods are nil-safe
+	hist  *history.Store  // nil unless -Y/--history; all methods are nil-safe
 
 	cwd string
 
