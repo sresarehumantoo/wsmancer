@@ -534,7 +534,10 @@ func (t *connRoundTripper) dialAndHandshake(req *http.Request) error {
 	}
 	if token == "" {
 		t.closeConn()
-		return fmt.Errorf("ntlm leg1: no challenge (status %d)", resp.StatusCode)
+		if resp.StatusCode != http.StatusUnauthorized {
+			return fmt.Errorf("ntlm leg1: server returned HTTP %d (expected 401 challenge); WinRM may not be listening at this URL", resp.StatusCode)
+		}
+		return fmt.Errorf("ntlm leg1: 401 but no Negotiate challenge; server may require a different auth scheme")
 	}
 	t2, err := base64.StdEncoding.DecodeString(token)
 	if err != nil {

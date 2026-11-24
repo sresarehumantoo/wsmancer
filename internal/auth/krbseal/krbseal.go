@@ -758,6 +758,10 @@ func (t *connRoundTripper) send(req *http.Request, plain []byte) (*http.Response
 	if err != nil {
 		return nil, err
 	}
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusInternalServerError && !isSealedResponse(resp) {
+		return nil, fmt.Errorf("krbseal: server returned HTTP %d; WinRM may not be listening at this URL (body: %s)",
+			resp.StatusCode, truncateBody(enc, 200))
+	}
 	if debugOn && resp.StatusCode != http.StatusOK {
 		snippet := string(enc)
 		if len(snippet) > 400 {
@@ -799,6 +803,13 @@ func (t *connRoundTripper) send(req *http.Request, plain []byte) (*http.Response
 	resp.Header.Set("Content-Type", "application/soap+xml;charset=UTF-8")
 	resp.Header.Set("Content-Length", strconv.Itoa(len(dec)))
 	return resp, nil
+}
+
+func truncateBody(b []byte, max int) string {
+	if len(b) <= max {
+		return string(b)
+	}
+	return string(b[:max]) + "..."
 }
 
 // isSealedResponse reports whether the server sealed this response (a WSMan
