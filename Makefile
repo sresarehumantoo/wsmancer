@@ -8,7 +8,7 @@ BIN     := wsmancer
 TARGET  ?=
 DCIP    ?=
 
-.PHONY: all build sealcheck test vet fmt check mutants tickets verify clean
+.PHONY: all build sealcheck test vet fmt check mutants pre-commit hooks tickets verify clean
 
 all: check build
 
@@ -55,6 +55,15 @@ tickets:
 verify: sealcheck
 	@test -n "$(TARGET)" -a -n "$(DCIP)" || { echo "set TARGET=<winrm-host> DCIP=<dc-ip>"; exit 1; }
 	./scripts/verify-matrix.sh $(TARGET) $(DCIP)
+
+pre-commit: check
+	@echo "Pre-commit checks passed."
+
+hooks:
+	@mkdir -p .git/hooks
+	@printf '#!/bin/sh\nmake pre-commit\n' > .git/hooks/pre-commit
+	@chmod +x .git/hooks/pre-commit
+	@echo "Pre-commit hook installed."
 
 clean:
 	rm -f $(BIN) wsmancer-sealcheck

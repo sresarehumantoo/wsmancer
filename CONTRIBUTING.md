@@ -410,3 +410,15 @@ that settled it.
   never on WSManFault code `2150858843`, that code also means "command
   identifier that does not exist", which `StopPipelines` provokes routinely, so
   keying on it would let an ordinary Ctrl-C destroy a live runspace.
+
+## Submitting changes
+
+- Fork the repo and create a branch from `main`, named with a prefix: `feat/`,
+  `fix/`, `chore/`, `docs/`, or `test/` (for example `fix/ntlmseal-integrity`).
+- Keep commits small and focused: one logical change per commit, one logical
+  change per pull request.
+- Run `make check` and `golangci-lint run` before pushing. If you touched
+  `internal/auth/ntlmseal` or `internal/auth/krbseal`, run `make mutants` too.
+- CI must pass before a PR is merged.
+- Open a pull request against `main` with a short description of what changed
+  and why.
