@@ -97,7 +97,7 @@ jobs:
       # sealcheck drives the sealing providers (verify-matrix.sh runs it) and
       # scripts/verify-matrix.sh still drives it, so it has to keep building.
       - run: go build -o wsmancer-sealcheck ./cmd/sealcheck
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: wsmancer-linux-amd64
           path: wsmancer
