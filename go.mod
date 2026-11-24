@@ -22,3 +22,5 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 )
+
+replace github.com/smnsjas/go-psrpcore => github.com/sresarehumantoo/go-psrpcore v0.0.0-20261124202958-25a87e77cb78
