@@ -8,10 +8,10 @@ require (
 	github.com/reeflective/readline v1.3.0
 	github.com/smnsjas/go-psrpcore v0.0.0-20260211164949-dace42c5b6a8
 	github.com/sresarehumantoo/go-psrp v0.1.1
-	golang.org/x/crypto v0.58.0
-	golang.org/x/net v0.61.0
+	golang.org/x/crypto v0.59.0
+	golang.org/x/net v0.62.0
 	golang.org/x/sys v0.50.0
-	golang.org/x/term v0.47.0
+	golang.org/x/term v0.48.0
 )
 
 require (
